@@ -16,7 +16,7 @@ export function VariantCard({ productName, variant, onAdd, onEdit }: VariantCard
       <button
         type="button"
         onClick={onAdd}
-        className="flex min-h-40 w-full flex-col items-start justify-between gap-4 rounded-3xl border-2 border-kiosk-muted bg-white p-6 text-left shadow-md transition hover:-translate-y-1 hover:border-kiosk-accent hover:bg-kiosk-light hover:shadow-xl active:scale-[0.98]"
+        className="flex min-h-56 w-full flex-col items-start justify-between gap-4 rounded-2xl bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:bg-kiosk-light hover:shadow-md active:scale-[0.98]"
       >
         <div>
           <p className="text-2xl font-bold leading-tight text-gray-900">{productName}</p>
