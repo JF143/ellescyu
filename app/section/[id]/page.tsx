@@ -25,6 +25,7 @@ export default function SectionPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [variantSearchQuery, setVariantSearchQuery] = useState("");
 
   const { sections, isLoading: sectionsLoading, error: sectionsError, updateSection } = useSections();
   const { products, isLoading: productsLoading, error: productsError, fetchProducts } = useProducts();
@@ -39,7 +40,7 @@ export default function SectionPage() {
   const variantCards = useMemo(() => {
     const sectionProducts = products.filter((product) => product.section_id === sectionId);
 
-    return sectionProducts.flatMap((product) =>
+    const allCards = sectionProducts.flatMap((product) =>
       variants
         .filter((variant) => variant.product_id === product.id)
         .map((variant) => ({
@@ -48,7 +49,15 @@ export default function SectionPage() {
           variant,
         })),
     );
-  }, [products, variants, sectionId]);
+
+    if (!variantSearchQuery.trim()) return allCards;
+
+    return allCards.filter(
+      (card) =>
+        card.productName.toLowerCase().includes(variantSearchQuery.toLowerCase()) ||
+        card.variant.label.toLowerCase().includes(variantSearchQuery.toLowerCase()),
+    );
+  }, [products, variants, sectionId, variantSearchQuery]);
 
   const handleAddToCart = (variant: Variant, productName: string) => {
     addToCart(variant, productName);
@@ -219,12 +228,12 @@ export default function SectionPage() {
                     type="button"
                     onClick={handleStartEdit}
                     aria-label="Edit category name"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-kiosk-muted text-kiosk-primary hover:bg-kiosk-accent hover:text-white transition"
+                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-kiosk-muted text-kiosk-primary hover:bg-kiosk-accent hover:text-white active:scale-95 transition touch-manipulation"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="20"
+                      height="20"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -239,6 +248,26 @@ export default function SectionPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <div className="relative">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={variantSearchQuery}
+              onChange={(e) => setVariantSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-lg border border-kiosk-muted bg-white text-gray-900 placeholder-gray-500 text-lg focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition touch-manipulation"
+            />
           </div>
         </div>
 

@@ -32,15 +32,15 @@ export function OrderListPanel() {
       className="fixed bottom-0 right-0 top-0 z-50 flex w-[25%] min-w-[320px] flex-col bg-gradient-to-b from-white to-kiosk-lighter shadow-2xl border-l border-kiosk-muted"
     >
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-kiosk-muted px-6 py-5">
-        <h2 className="text-2xl font-bold text-kiosk-primary">Your Order</h2>
+        <h2 className="text-2xl font-bold text-kiosk-primary">Order Details</h2>
         <p className="text-sm text-gray-600 mt-1">{cartCount} {cartCount === 1 ? 'item' : 'items'}</p>
       </div>
 
       <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-6">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
-            <p className="text-4xl mb-2">🛒</p>
-            <p className="text-gray-600 font-medium">Your cart is empty</p>
+            <p className="text-4xl mb-2">📝</p>
+            <p className="text-gray-600 font-medium">No items ordered yet</p>
             <p className="text-sm text-gray-500 mt-1">Add items to get started</p>
           </div>
         ) : (
@@ -110,9 +110,9 @@ export function OrderListPanel() {
           type="button"
           onClick={handleTotal}
           disabled={cartCount === 0}
-          className="w-full rounded-xl bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98]"
+          className="w-full rounded-xl bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-4 px-6 text-lg font-bold text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] min-h-14 touch-manipulation"
         >
-          {cartCount === 0 ? "Add Items to Checkout" : "Proceed to Checkout"}
+          {cartCount === 0 ? "Add Items" : `Charge ${formatCurrency(cartTotal)}`}
         </button>
       </div>
     </aside>
