@@ -29,70 +29,90 @@ export function OrderListPanel() {
   return (
     <aside
       aria-label="Order list"
-      className="fixed bottom-0 right-0 top-0 z-50 flex w-[25%] min-w-[300px] flex-col bg-white shadow-2xl"
+      className="fixed bottom-0 right-0 top-0 z-50 flex w-[25%] min-w-[320px] flex-col bg-gradient-to-b from-white to-kiosk-lighter shadow-2xl border-l border-kiosk-muted"
     >
-      <ul className="flex-1 space-y-4 overflow-y-auto p-6">
-        {cart.map((item) => (
-          <li
-            key={item.variantId}
-            className="rounded-2xl bg-kiosk-lighter p-4 text-sm shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <p className="font-bold text-gray-900">{item.productName}</p>
-                <p className="text-xs text-kiosk-primary">{item.variantLabel}</p>
-                <p className="mt-1 font-semibold text-kiosk-accent">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-kiosk-muted px-6 py-5">
+        <h2 className="text-2xl font-bold text-kiosk-primary">Your Order</h2>
+        <p className="text-sm text-gray-600 mt-1">{cartCount} {cartCount === 1 ? 'item' : 'items'}</p>
+      </div>
+
+      <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-6">
+        {cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 text-center">
+            <p className="text-4xl mb-2">🛒</p>
+            <p className="text-gray-600 font-medium">Your cart is empty</p>
+            <p className="text-sm text-gray-500 mt-1">Add items to get started</p>
+          </div>
+        ) : (
+          cart.map((item) => (
+            <li
+              key={item.variantId}
+              className="rounded-xl bg-white/80 backdrop-blur border border-kiosk-muted p-4 hover:shadow-md transition"
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{item.productName}</p>
+                  <p className="text-xs text-kiosk-accent font-medium">{item.variantLabel}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.variantId)}
+                  aria-label={`Remove ${item.productName} ${item.variantLabel}`}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 active:scale-95 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-kiosk-primary">
                   {formatCurrency(item.price * item.quantity)}
                 </p>
+                <div className="flex items-center gap-1 bg-kiosk-lighter rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => decrementItem(item.variantId)}
+                    aria-label={`Decrease quantity of ${item.productName}`}
+                    className="flex h-7 w-7 items-center justify-center rounded bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-95 transition"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center font-bold text-gray-900 text-sm">
+                    {item.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => incrementItem(item.variantId)}
+                    aria-label={`Increase quantity of ${item.productName}`}
+                    className="flex h-7 w-7 items-center justify-center rounded bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-95 transition"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => removeItem(item.variantId)}
-                aria-label={`Remove ${item.productName} ${item.variantLabel}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-lg font-bold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-95"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => decrementItem(item.variantId)}
-                aria-label={`Decrease quantity of ${item.productName}`}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-kiosk-muted text-xl font-bold text-kiosk-primary transition hover:bg-kiosk-accent hover:text-white active:scale-95"
-              >
-                −
-              </button>
-              <span className="min-w-6 text-center font-bold text-gray-900">
-                {item.quantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => incrementItem(item.variantId)}
-                aria-label={`Increase quantity of ${item.productName}`}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-kiosk-muted text-xl font-bold text-kiosk-primary transition hover:bg-kiosk-accent hover:text-white active:scale-95"
-              >
-                +
-              </button>
-            </div>
-          </li>
-        ))}
+            </li>
+          ))
+        )}
       </ul>
 
-      <div className="border-t border-kiosk-muted bg-white p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-lg font-semibold text-gray-700">Subtotal</span>
-          <span className="text-2xl font-bold text-kiosk-primary">
-            {formatCurrency(cartTotal)}
-          </span>
+      <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent border-t border-kiosk-muted px-6 py-6 space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-600">Subtotal</span>
+            <span className="text-xl font-bold text-kiosk-primary">
+              {formatCurrency(cartTotal)}
+            </span>
+          </div>
         </div>
         <button
           type="button"
           onClick={handleTotal}
-          className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white shadow-sm transition hover:bg-kiosk-accent active:scale-[0.98]"
+          disabled={cartCount === 0}
+          className="w-full rounded-xl bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98]"
         >
-          Checkout
+          {cartCount === 0 ? "Add Items to Checkout" : "Proceed to Checkout"}
         </button>
       </div>
     </aside>

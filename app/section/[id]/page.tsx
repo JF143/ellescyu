@@ -24,6 +24,7 @@ export default function SectionPage() {
   const [editedName, setEditedName] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { sections, isLoading: sectionsLoading, error: sectionsError, updateSection } = useSections();
   const { products, isLoading: productsLoading, error: productsError, fetchProducts } = useProducts();
@@ -109,34 +110,53 @@ export default function SectionPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-kiosk-lighter">
+    <div className="flex min-h-screen bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
       {/* Left Sidebar - Categories */}
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-lg">
-        <div className="p-6 space-y-4">
-          <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
-          <div className="space-y-2">
-            {sections.map((cat) => (
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted">
+        <div className="sticky top-0 bg-white z-10 p-6 border-b border-kiosk-muted space-y-4">
+          <h2 className="text-2xl font-bold text-kiosk-primary">Categories</h2>
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-kiosk-muted bg-kiosk-lighter text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition"
+            />
+          </div>
+        </div>
+        <div className="p-4 space-y-1">
+          {sections
+            .filter((cat) => cat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map((cat) => (
               <Link
                 key={cat.id}
                 href={cat.id === sectionId ? "#" : `/section/${cat.id}`}
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
                   cat.id === sectionId
                     ? "bg-kiosk-primary text-white"
-                    : "text-gray-700 hover:bg-kiosk-lighter active:bg-kiosk-light"
+                    : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary active:bg-kiosk-light"
                 }`}
               >
-                <span className="text-xl">{cat.icon ?? "📦"}</span>
-                <span>{cat.name}</span>
+                <span className="text-2xl">{cat.icon ?? "📦"}</span>
+                <span className="truncate">{cat.name}</span>
               </Link>
             ))}
-          </div>
         </div>
       </aside>
 
       <button
         type="button"
         onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-6 left-80 z-50 flex items-center gap-2 rounded-full bg-kiosk-primary px-6 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-kiosk-accent active:scale-[0.98]"
+        className="fixed bottom-6 left-80 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-6 py-3 text-lg font-bold text-white shadow-xl hover:shadow-2xl transition active:scale-[0.98]"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -155,7 +175,7 @@ export default function SectionPage() {
         Add Item
       </button>
 
-      <main className="ml-64 pr-[28%] flex-1 px-8 py-10">
+      <main className="ml-72 pr-[28%] flex-1 px-8 py-12">
         <div className="mb-10 flex flex-wrap items-center gap-6">
           <BackButton />
           <div className="flex items-center gap-3">
