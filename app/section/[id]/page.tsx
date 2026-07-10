@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
@@ -108,11 +109,34 @@ export default function SectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-kiosk-lighter">
+    <div className="flex min-h-screen bg-kiosk-lighter">
+      {/* Left Sidebar - Categories */}
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-lg">
+        <div className="p-6 space-y-4">
+          <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
+          <div className="space-y-2">
+            {sections.map((cat) => (
+              <Link
+                key={cat.id}
+                href={cat.id === sectionId ? "#" : `/section/${cat.id}`}
+                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
+                  cat.id === sectionId
+                    ? "bg-kiosk-primary text-white"
+                    : "text-gray-700 hover:bg-kiosk-lighter active:bg-kiosk-light"
+                }`}
+              >
+                <span className="text-xl">{cat.icon ?? "📦"}</span>
+                <span>{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </aside>
+
       <button
         type="button"
         onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full bg-kiosk-primary px-6 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-kiosk-accent active:scale-[0.98]"
+        className="fixed bottom-6 left-80 z-50 flex items-center gap-2 rounded-full bg-kiosk-primary px-6 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-kiosk-accent active:scale-[0.98]"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -131,7 +155,7 @@ export default function SectionPage() {
         Add Item
       </button>
 
-      <main className="mx-auto max-w-6xl px-8 py-10 pr-[28%]">
+      <main className="ml-64 pr-[28%] flex-1 px-8 py-10">
         <div className="mb-10 flex flex-wrap items-center gap-6">
           <BackButton />
           <div className="flex items-center gap-3">
