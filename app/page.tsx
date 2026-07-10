@@ -29,13 +29,13 @@ export default function HomePage() {
     <div className="min-h-screen bg-kiosk-lighter">
       <AdminSettingsLink />
 
-      <main className="mx-auto max-w-6xl px-8 py-12 pr-[28%]">
-        <header className="mb-12 text-center">
-          <h1 className="text-5xl font-bold text-kiosk-primary">Ellescyu App</h1>
-          <p className="mt-4 text-2xl text-gray-600">What does the customer want?</p>
+      <main className="mx-auto max-w-6xl px-8 py-8 pr-[28%]">
+        <header className="mb-10">
+          <h1 className="text-5xl font-bold text-kiosk-primary">Select Category</h1>
+          <p className="mt-2 text-lg text-gray-600">Choose what you&apos;d like to order</p>
         </header>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section) => (
             <SectionCard key={section.id} section={section} />
           ))}

@@ -31,13 +31,6 @@ export function OrderListPanel() {
       aria-label="Order list"
       className="fixed bottom-0 right-0 top-0 z-50 flex w-[25%] min-w-[300px] flex-col bg-white shadow-2xl"
     >
-      <div className="flex items-center justify-between border-b border-kiosk-muted bg-kiosk-lighter px-6 py-5">
-        <h2 className="text-2xl font-bold text-kiosk-primary">Order List</h2>
-        <span className="rounded-full bg-kiosk-primary px-4 py-2 text-sm font-bold text-white">
-          {cartCount}
-        </span>
-      </div>
-
       <ul className="flex-1 space-y-4 overflow-y-auto p-6">
         {cart.map((item) => (
           <li
