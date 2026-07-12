@@ -29,7 +29,7 @@ export default function SectionPage() {
 
   const { sections, isLoading: sectionsLoading, error: sectionsError, updateSection } = useSections();
   const { products, isLoading: productsLoading, error: productsError, fetchProducts } = useProducts();
-  const { variants, isLoading: variantsLoading, error: variantsError, fetchVariants } = useVariants();
+  const { variants, isLoading: variantsLoading, error: variantsError, fetchVariants, deleteVariant } = useVariants();
   const { addToCart } = useCart();
 
   const isLoading = sectionsLoading || productsLoading || variantsLoading;
@@ -93,6 +93,18 @@ export default function SectionPage() {
     setEditingVariant(null);
   };
 
+  const handleDeleteVariant = async (variantId: string) => {
+    if (!confirm("Are you sure you want to delete this variant?")) return;
+    try {
+      await deleteVariant(variantId);
+      await fetchVariants();
+      showToast("Variant deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete variant:", error);
+      showToast("Failed to delete variant");
+    }
+  };
+
   if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-kiosk-lighter">
@@ -121,12 +133,12 @@ export default function SectionPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
       {/* Left Sidebar - Categories */}
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted">
-        <div className="sticky top-0 bg-white z-10 p-6 border-b border-kiosk-muted space-y-4">
-          <h2 className="text-2xl font-bold text-kiosk-primary">Categories</h2>
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted">
+        <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted space-y-3">
+          <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kiosk-muted pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -135,59 +147,37 @@ export default function SectionPage() {
             </svg>
             <input
               type="text"
-              placeholder="Search categories..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-kiosk-muted bg-kiosk-lighter text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-kiosk-muted bg-kiosk-lighter text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition"
             />
           </div>
         </div>
-        <div className="p-4 space-y-1">
+        <div className="p-3 space-y-1">
           {sections
             .filter((cat) => cat.name.toLowerCase().includes(searchQuery.toLowerCase()))
             .map((cat) => (
               <Link
                 key={cat.id}
                 href={cat.id === sectionId ? "#" : `/section/${cat.id}`}
-                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
                   cat.id === sectionId
                     ? "bg-kiosk-primary text-white"
                     : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary active:bg-kiosk-light"
                 }`}
               >
-                <span className="text-2xl">{cat.icon ?? "📦"}</span>
+                <span className="text-xl">{cat.icon ?? "📦"}</span>
                 <span className="truncate">{cat.name}</span>
               </Link>
             ))}
         </div>
       </aside>
 
-      <button
-        type="button"
-        onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-6 left-80 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-6 py-3 text-lg font-bold text-white shadow-xl hover:shadow-2xl transition active:scale-[0.98]"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        Add Item
-      </button>
-
       <main className="ml-72 pr-[28%] flex-1 px-8 py-12">
-        <div className="mb-10 flex flex-wrap items-center gap-6">
-          <BackButton />
-          <div className="flex items-center gap-3">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <BackButton />
             <div>
               <p className="text-lg font-medium text-kiosk-accent">Category</p>
               {isEditing ? (
@@ -249,6 +239,29 @@ export default function SectionPage() {
               )}
             </div>
           </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 rounded-full bg-kiosk-primary px-6 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-kiosk-accent active:scale-[0.98]"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Item
+            </button>
+          </div>
         </div>
 
         <div className="mb-8">
@@ -279,6 +292,7 @@ export default function SectionPage() {
               variant={variant}
               onAdd={() => handleAddToCart(variant, productName)}
               onEdit={() => setEditingVariant(variant)}
+              onDelete={() => handleDeleteVariant(variant.id)}
             />
           ))}
         </div>

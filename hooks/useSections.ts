@@ -86,6 +86,7 @@ export function useSections() {
     isLoading,
     error,
     isReady: !isLoading && !error,
+    fetchSections,
     addSection,
     updateSection,
     deleteSection,
