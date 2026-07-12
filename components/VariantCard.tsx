@@ -20,7 +20,7 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
         className="flex min-h-56 w-full flex-col items-start justify-between gap-2 rounded-2xl bg-white p-5 text-left shadow-md transition hover:-translate-y-2 hover:shadow-lg active:scale-[0.98] touch-manipulation"
       >
         <div className="flex flex-col gap-1">
-          <p className="text-lg font-bold text-gray-900">{productName}</p>
+          <p className="text-lg font-bold text-gray-900 pr-14">{productName}</p>
           <p className="text-sm font-medium text-kiosk-primary">{variant.label}</p>
         </div>
         <p className="text-2xl font-bold text-kiosk-accent">{formatCurrency(variant.price)}</p>
