@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
+import { useBrands } from "@/hooks/useBrands";
 
 type VariantRow = { label: string; price: string };
 
@@ -16,9 +17,17 @@ type AddProductModalProps = {
 
 export function AddProductModal({ sectionId, isOpen, onClose, onSuccess }: AddProductModalProps) {
   const { addProduct } = useProducts();
+  const { brands } = useBrands();
   const [productName, setProductName] = useState("");
+  const [brandId, setBrandId] = useState("");
   const [productVariants, setProductVariants] = useState<VariantRow[]>([emptyVariantRow()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setProductName("");
+    setBrandId("");
+    setProductVariants([emptyVariantRow()]);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -33,9 +42,8 @@ export function AddProductModal({ sectionId, isOpen, onClose, onSuccess }: AddPr
 
     setIsSubmitting(true);
     try {
-      await addProduct(sectionId, productName.trim(), rows);
-      setProductName("");
-      setProductVariants([emptyVariantRow()]);
+      await addProduct(sectionId, productName.trim(), rows, brandId || undefined);
+      resetForm();
       onSuccess();
       onClose();
     } catch (error) {
@@ -71,6 +79,22 @@ export function AddProductModal({ sectionId, isOpen, onClose, onSuccess }: AddPr
               placeholder="e.g. Nescafe Creamy White"
               autoFocus
             />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-lg font-medium text-gray-700">Brand</span>
+            <select
+              value={brandId}
+              onChange={(event) => setBrandId(event.target.value)}
+              className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+            >
+              <option value="">No brand</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="space-y-3">

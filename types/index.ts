@@ -9,6 +9,13 @@ export type Product = {
   id: string;
   section_id: string;
   name: string;
+  brand_id?: string | null;
+  created_at?: string;
+};
+
+export type Brand = {
+  id: string;
+  name: string;
   created_at?: string;
 };
 

@@ -15,7 +15,8 @@ export function useProducts() {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true });
 
       if (error) throw error;
       setProducts(data || []);
@@ -36,9 +37,15 @@ export function useProducts() {
       sectionId: string,
       name: string,
       variantRows: Array<{ label: string; price: number }>,
+      brandId?: string,
     ) => {
       try {
-        const product: Product = { id: uuidv4(), section_id: sectionId, name };
+        const product: Product = {
+          id: uuidv4(),
+          section_id: sectionId,
+          name,
+          brand_id: brandId || null,
+        };
         const { error: productError } = await supabase
           .from("products")
           .insert(product);
@@ -70,7 +77,7 @@ export function useProducts() {
   );
 
   const updateProduct = useCallback(
-    async (id: string, updates: Partial<Pick<Product, "name" | "section_id">>) => {
+    async (id: string, updates: Partial<Pick<Product, "name" | "section_id" | "brand_id">>) => {
       try {
         const { error } = await supabase
           .from("products")
@@ -115,4 +122,3 @@ export function useProducts() {
     deleteProduct,
   };
 }
-

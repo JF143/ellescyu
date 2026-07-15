@@ -1,36 +1,71 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMounted } from "@/hooks/useMounted";
-import { useToast } from "@/components/Toast";
-import { AdminSettingsLink } from "@/components/AdminSettingsLink";
-import { SectionCard } from "@/components/SectionCard";
-import { AddCategoryModal } from "@/components/AddCategoryModal";
-import { CategorySettingsModal } from "@/components/CategorySettingsModal";
+import { VariantCard } from "@/components/VariantCard";
+import { BrandRibbon } from "@/components/BrandRibbon";
 import { useSections } from "@/hooks/useSections";
-import type { Section } from "@/types";
+import { useProducts } from "@/hooks/useProducts";
+import { useVariants } from "@/hooks/useVariants";
+import { useBrands } from "@/hooks/useBrands";
+import { useCart } from "@/hooks/useCart";
+import { getBrand } from "@/lib/getBrand";
+import Link from "next/link";
 
 export default function HomePage() {
   const mounted = useMounted();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<Section | null>(null);
-  const { showToast } = useToast();
-  const { sections, isLoading, error, isReady, fetchSections } = useSections();
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const { addToCart } = useCart();
+
+  const {
+    sections,
+    isLoading: sectionsLoading,
+    error: sectionsError,
+  } = useSections();
+  const { products, isLoading: productsLoading, error: productsError } = useProducts();
+  const { variants, isLoading: variantsLoading, error: variantsError } = useVariants();
+  const { brands, isLoading: brandsLoading, error: brandsError } = useBrands();
+
+  const isLoading = sectionsLoading || productsLoading || variantsLoading || brandsLoading;
+  const error = sectionsError || productsError || variantsError || brandsError;
 
   const filteredSections = sections.filter((section) =>
     section.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddCategorySuccess = async () => {
-    await fetchSections();
-    showToast("Category added successfully");
-  };
+  const selectedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
 
-  const handleSettingsSuccess = async () => {
-    await fetchSections();
-    showToast("Category updated successfully");
+  const allItems = useMemo(() => {
+    return products.flatMap((product) =>
+      variants
+        .filter((v) => v.product_id === product.id)
+        .map((variant) => ({ product, variant }))
+    );
+  }, [products, variants]);
+
+  const categoryItems = useMemo(() => {
+    if (!selectedSectionId) return allItems;
+    return allItems.filter((item) => item.product.section_id === selectedSectionId);
+  }, [allItems, selectedSectionId]);
+
+  const brandsInScope = useMemo(() => {
+    const set = new Set(categoryItems.map((item) => getBrand(item.product, brands)));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [categoryItems, brands]);
+
+  const visibleItems = useMemo(() => {
+    const filtered = selectedBrand
+      ? categoryItems.filter((item) => getBrand(item.product, brands) === selectedBrand)
+      : categoryItems;
+
+    return [...filtered].sort((a, b) => a.product.name.localeCompare(b.product.name));
+  }, [categoryItems, selectedBrand, brands]);
+
+  const handleSelectSection = (sectionId: string | null) => {
+    setSelectedSectionId(sectionId);
+    setSelectedBrand(null);
   };
 
   if (!mounted || isLoading) {
@@ -51,20 +86,19 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
-      {/* Left Sidebar - Categories */}
       <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted">
         <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
           <div className="flex items-center justify-between mb-3">
-            <AdminSettingsLink />
-            <button
-              type="button"
-              onClick={() => setSettingsSection(null)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-kiosk-muted text-kiosk-primary hover:bg-kiosk-accent hover:text-white transition"
+            <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
+            <Link
+              href="/admin"
+              aria-label="Admin settings"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-kiosk-primary hover:bg-kiosk-muted transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -75,9 +109,8 @@ export default function HomePage() {
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-            </button>
+            </Link>
           </div>
-          <h2 className="text-xl font-bold text-kiosk-primary mb-3">Categories</h2>
           <div className="relative">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kiosk-muted pointer-events-none"
@@ -97,37 +130,33 @@ export default function HomePage() {
           </div>
         </div>
         <div className="p-3 space-y-1">
+          <button
+            type="button"
+            onClick={() => handleSelectSection(null)}
+            className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              selectedSectionId === null
+                ? "bg-kiosk-light text-kiosk-primary font-bold"
+                : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary"
+            }`}
+          >
+            <span className="text-xl">🗂️</span>
+            <span className="truncate">All Categories</span>
+          </button>
+
           {filteredSections.map((section) => (
-            <div key={section.id} className="flex items-center gap-2">
-              <Link
-                href={`/section/${section.id}`}
-                className="flex-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-kiosk-lighter hover:text-kiosk-primary active:bg-kiosk-light"
-              >
-                <span className="text-xl">{section.icon ?? "📦"}</span>
-                <span className="truncate">{section.name}</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setSettingsSection(section)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-kiosk-primary hover:bg-kiosk-muted transition"
-                aria-label="Category settings"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-            </div>
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => handleSelectSection(section.id)}
+              className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                selectedSectionId === section.id
+                  ? "bg-kiosk-light text-kiosk-primary font-bold"
+                  : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary"
+              }`}
+            >
+              <span className="text-xl">{section.icon ?? "📦"}</span>
+              <span className="truncate">{section.name}</span>
+            </button>
           ))}
           {filteredSections.length === 0 && searchQuery && (
             <p className="px-4 py-8 text-center text-sm text-gray-500">No categories found</p>
@@ -135,50 +164,50 @@ export default function HomePage() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="ml-72 pr-[28%] flex-1">
+      <main className="ml-72 mr-96 flex-1 overflow-x-hidden">
         <div className="px-8 py-12">
-          <header className="mb-12 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-kiosk-accent uppercase tracking-wide mb-2">Welcome</p>
-              <h1 className="text-6xl font-bold text-kiosk-primary mb-3">Select Your Items</h1>
-              <p className="text-lg text-gray-600">Browse through our collection and build your order</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-kiosk-primary text-4xl font-bold text-white shadow-lg transition hover:bg-kiosk-accent active:scale-[0.98]"
-            >
-              +
-            </button>
+          <header className="mb-6">
+            <p className="text-sm font-semibold text-kiosk-accent uppercase tracking-wide mb-2">
+              {selectedSection ? "Now Browsing" : "Welcome"}
+            </p>
+            <h1 className="text-6xl font-bold text-kiosk-primary mb-3">
+              {selectedSection ? `${selectedSection.icon ?? "📦"} ${selectedSection.name}` : "Select Your Items"}
+            </h1>
+            <p className="text-lg text-gray-600">
+              {selectedSection
+                ? `Browsing ${selectedSection.name} — tap an item to add it to your order`
+                : "Browse through our collection and build your order"}
+            </p>
           </header>
 
+          <BrandRibbon
+            brands={brandsInScope}
+            selectedBrand={selectedBrand}
+            onSelectBrand={setSelectedBrand}
+          />
+
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredSections.map((section) => (
-              <SectionCard key={section.id} section={section} />
+            {visibleItems.map(({ product, variant }) => (
+              <VariantCard
+                key={variant.id}
+                productName={product.name}
+                variant={variant}
+                onAdd={() => addToCart(variant, product.name)}
+              />
             ))}
           </div>
 
-          {sections.length === 0 ? (
+          {visibleItems.length === 0 && (
             <p className="mt-12 text-center text-xl text-gray-500">
-              No sections yet. Add some in Admin settings.
+              {selectedBrand
+                ? `No products found for ${selectedBrand}${selectedSection ? ` in ${selectedSection.name}` : ""}.`
+                : sections.length === 0
+                ? "No sections yet. Add some in Admin settings."
+                : "No products found."}
             </p>
-          ) : null}
+          )}
         </div>
       </main>
-
-      <AddCategoryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSuccess={handleAddCategorySuccess}
-      />
-
-      <CategorySettingsModal
-        section={settingsSection}
-        isOpen={!!settingsSection}
-        onClose={() => setSettingsSection(null)}
-        onSuccess={handleSettingsSuccess}
-      />
     </div>
   );
 }
