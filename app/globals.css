@@ -31,3 +31,9 @@ button,
 a {
   touch-action: manipulation;
 }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}

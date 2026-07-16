@@ -17,6 +17,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
   const { addToCart } = useCart();
 
   const {
@@ -31,9 +32,9 @@ export default function HomePage() {
   const isLoading = sectionsLoading || productsLoading || variantsLoading || brandsLoading;
   const error = sectionsError || productsError || variantsError || brandsError;
 
-  const filteredSections = sections.filter((section) =>
-    section.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredSections = sections
+  .filter((section) => section.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
 
@@ -56,12 +57,17 @@ export default function HomePage() {
   }, [categoryItems, brands]);
 
   const visibleItems = useMemo(() => {
-    const filtered = selectedBrand
+    let filtered = selectedBrand
       ? categoryItems.filter((item) => getBrand(item.product, brands) === selectedBrand)
       : categoryItems;
 
+    if (productSearchQuery.trim()) {
+      const query = productSearchQuery.toLowerCase();
+      filtered = filtered.filter((item) => item.product.name.toLowerCase().includes(query));
+    }
+
     return [...filtered].sort((a, b) => a.product.name.localeCompare(b.product.name));
-  }, [categoryItems, selectedBrand, brands]);
+  }, [categoryItems, selectedBrand, brands, productSearchQuery]);
 
   const handleSelectSection = (sectionId: string | null) => {
     setSelectedSectionId(sectionId);
@@ -85,8 +91,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
+      <aside className="fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
@@ -164,21 +170,39 @@ export default function HomePage() {
         </div>
       </aside>
 
-      <main className="ml-72 mr-96 flex-1 overflow-x-hidden">
+      <main className="ml-72 mr-96 flex-1 h-screen overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="px-8 py-12">
           <header className="mb-6">
             <p className="text-sm font-semibold text-kiosk-accent uppercase tracking-wide mb-2">
               {selectedSection ? "Now Browsing" : "Welcome"}
             </p>
             <h1 className="text-6xl font-bold text-kiosk-primary mb-3">
-              {selectedSection ? `${selectedSection.icon ?? "📦"} ${selectedSection.name}` : "Select Your Items"}
+              {selectedSection ? `${selectedSection.icon ?? "📦"} ${selectedSection.name}` : "Ellescyu's Kiosk"}
             </h1>
             <p className="text-lg text-gray-600">
               {selectedSection
                 ? `Browsing ${selectedSection.name} — tap an item to add it to your order`
-                : "Browse through our collection and build your order"}
+                : "Browse through our collection and build the customer's order"}
             </p>
           </header>
+
+          <div className="relative mb-6">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={productSearchQuery}
+              onChange={(e) => setProductSearchQuery(e.target.value)}
+              className="w-full rounded-2xl border border-kiosk-muted bg-white pl-12 pr-4 py-4 text-lg text-gray-900 placeholder-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-kiosk-primary transition"
+            />
+          </div>
 
           <BrandRibbon
             brands={brandsInScope}
@@ -199,7 +223,9 @@ export default function HomePage() {
 
           {visibleItems.length === 0 && (
             <p className="mt-12 text-center text-xl text-gray-500">
-              {selectedBrand
+              {productSearchQuery.trim()
+                ? `No products match "${productSearchQuery}"${selectedSection ? ` in ${selectedSection.name}` : ""}.`
+                : selectedBrand
                 ? `No products found for ${selectedBrand}${selectedSection ? ` in ${selectedSection.name}` : ""}.`
                 : sections.length === 0
                 ? "No sections yet. Add some in Admin settings."

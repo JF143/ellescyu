@@ -23,7 +23,7 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
           <p className="text-lg font-bold text-gray-900 pr-14">{productName}</p>
           <p className="text-sm font-medium text-kiosk-primary">{variant.label}</p>
         </div>
-        <p className="text-2xl font-bold text-kiosk-accent">{formatCurrency(variant.price)}</p>
+        <p className="text-2xl font-bold text-black">{formatCurrency(variant.price)}</p>
       </button>
       <div className="absolute top-3 right-3 flex gap-1">
         {onEdit && (

@@ -113,7 +113,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-kiosk-lighter">
+    <div className="h-screen overflow-y-auto bg-kiosk-lighter">
       <header className="border-b border-kiosk-muted bg-white px-8 py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <div>
@@ -676,7 +676,7 @@ export default function AdminPage() {
                                     }}
                                     className="w-28 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
                                   />
-                                  <span className="font-semibold text-kiosk-accent">
+                                  <span className="font-semibold text-black">
                                     {formatCurrency(variant.price)}
                                   </span>
                                   <button
