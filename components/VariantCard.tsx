@@ -17,13 +17,22 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
       <button
         type="button"
         onClick={onAdd}
-        className="flex min-h-56 w-full flex-col items-start justify-between gap-2 rounded-2xl bg-white p-5 text-left shadow-md transition hover:-translate-y-2 hover:shadow-lg active:scale-[0.98] touch-manipulation"
+        className="flex w-full flex-col items-start gap-2 rounded-2xl bg-white p-4 text-left shadow-md transition hover:-translate-y-2 hover:shadow-lg active:scale-[0.98] touch-manipulation"
       >
-        <div className="flex flex-col gap-1">
-          <p className="text-lg font-bold text-gray-900 pr-14">{productName}</p>
-          <p className="text-sm font-medium text-kiosk-primary">{variant.label}</p>
+        <div className="flex flex-col gap-0.5 pr-14">
+          <p className="text-base font-bold text-gray-900 leading-tight">{productName}</p>
+          <p className="text-xs font-medium text-kiosk-primary">{variant.label}</p>
         </div>
-        <p className="text-2xl font-bold text-black">{formatCurrency(variant.price)}</p>
+
+        {variant.image_url && (
+          <img
+            src={variant.image_url}
+            alt={`${productName} - ${variant.label}`}
+            className="h-16 w-16 self-center rounded-lg object-cover"
+          />
+        )}
+
+        <p className="text-xl font-bold text-black">{formatCurrency(variant.price)}</p>
       </button>
       <div className="absolute top-3 right-3 flex gap-1">
         {onEdit && (

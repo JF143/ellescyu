@@ -29,6 +29,7 @@ export function OrderListPanel() {
   const [stage, setStage] = useState<CheckoutStage>("cart");
   const [amountInput, setAmountInput] = useState("");
   const [changeDue, setChangeDue] = useState(0);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
 
   if (!mounted || pathname.startsWith("/admin")) {
     return null;
@@ -50,12 +51,14 @@ export function OrderListPanel() {
   const handleStartPayment = () => {
     setAmountInput("");
     setStage("payment");
+    setMobileExpanded(true);
   };
 
   const handleConfirmPayment = () => {
     if (!isSufficient) return;
     setChangeDue(amountEntered - cartTotal);
     setStage("change");
+    setMobileExpanded(true);
   };
 
   const handleNewOrder = () => {
@@ -63,27 +66,49 @@ export function OrderListPanel() {
     setAmountInput("");
     setChangeDue(0);
     setStage("cart");
+    setMobileExpanded(false);
   };
 
-  return (
-    <aside
-      aria-label="Order list"
-      className="fixed bottom-0 right-0 top-0 z-50 flex w-96 flex-col bg-gradient-to-b from-white to-kiosk-lighter shadow-2xl border-l border-kiosk-muted overscroll-contain"
-    >
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-kiosk-muted px-6 py-5">
-        <h2 className="text-2xl font-bold text-kiosk-primary">Order Details</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          {stage === "cart"
-            ? `${cartCount} ${cartCount === 1 ? "item" : "items"}`
-            : stage === "payment"
-            ? "Enter cash received"
-            : "Payment complete"}
-        </p>
+  const renderPanel = (onClose?: () => void) => (
+    <>
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 backdrop-blur border-b border-kiosk-muted px-6 py-5">
+        <div>
+          <h2 className="text-2xl font-bold text-kiosk-primary">Order Details</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {stage === "cart"
+              ? `${cartCount} ${cartCount === 1 ? "item" : "items"}`
+              : stage === "payment"
+              ? "Enter cash received"
+              : "Payment complete"}
+          </p>
+        </div>
+        {onClose && stage === "cart" && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close order"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-kiosk-primary hover:bg-kiosk-muted transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {stage === "cart" && (
         <>
-          <ul className={`flex-1 space-y-3 overflow-y-auto px-6 py-6 ${SCROLL_HIDDEN}`}>
+          <ul className={`flex-1 min-h-0 space-y-3 overflow-y-auto px-6 py-6 ${SCROLL_HIDDEN}`}>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-center">
                 <p className="text-4xl mb-2">📝</p>
@@ -99,7 +124,7 @@ export function OrderListPanel() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 truncate">{item.productName}</p>
-                      <p className="text-xs text-kiosk-accent font-medium">{item.variantLabel}</p>
+                      <p className="text-xs text-gray-400 font-medium">{item.variantLabel}</p>
                     </div>
                     <button
                       type="button"
@@ -218,27 +243,58 @@ export function OrderListPanel() {
 
       {stage === "change" && (
         <div className="flex flex-1 min-h-0 flex-col px-6 py-6">
-          <ul className={`flex-1 min-h-0 space-y-3 overflow-y-auto mb-4 ${SCROLL_HIDDEN}`}>
-            {cart.map((item) => (
-              <li key={item.variantId} className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-bold text-gray-900 truncate">
-                    {item.productName}
-                    <span className="ml-2 text-sm font-medium text-gray-500">x{item.quantity}</span>
-                  </p>
-                  <p className="text-xs text-kiosk-accent font-medium">{item.variantLabel}</p>
-                </div>
-                <p className="shrink-0 font-semibold text-gray-900">
-                  {formatCurrency(item.price * item.quantity)}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="grid grid-cols-[auto_1fr_auto] gap-x-3 pb-2 border-b border-dashed border-kiosk-muted text-xs font-bold uppercase tracking-wide text-gray-500">
+              <span>Qty</span>
+              <span>Item Description</span>
+              <span className="text-right">Price</span>
+            </div>
 
-          <div className="flex flex-col items-center justify-center text-center border-t border-kiosk-muted pt-6">
-            <p className="text-5xl mb-4">✅</p>
-            <p className="text-lg font-medium text-gray-600 mb-2">Change Due</p>
-            <p className="text-5xl font-bold text-black mb-8">{formatCurrency(changeDue)}</p>
+            <ul className={`flex-1 min-h-0 overflow-y-auto divide-y divide-dashed divide-kiosk-muted ${SCROLL_HIDDEN}`}>
+              {cart.map((item) => (
+                <li key={item.variantId} className="grid grid-cols-[auto_1fr_auto] gap-x-3 py-2">
+                  <span className="text-sm font-semibold text-gray-900">{item.quantity}x</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{item.productName}</p>
+                    <p className="text-xs text-gray-400">{item.variantLabel}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 text-right">
+                    {formatCurrency(item.price * item.quantity)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="my-3 text-center text-sm font-semibold text-gray-500">
+            {cartCount} {cartCount === 1 ? "item" : "items"} Sold
+          </p>
+
+          <div className="border-t border-dashed border-kiosk-muted pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Sub Total</p>
+              <p className="text-base font-semibold text-black">{formatCurrency(cartTotal)}</p>
+            </div>
+
+            <div className="border-t border-kiosk-muted my-3" />
+
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-2xl font-bold text-black">Total</p>
+              <p className="text-2xl font-bold text-black">{formatCurrency(cartTotal)}</p>
+            </div>
+
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Cash</p>
+              <p className="text-base font-semibold text-black">{formatCurrency(amountEntered)}</p>
+            </div>
+
+            <div className="border-t border-dashed border-kiosk-muted my-3" />
+
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-lg font-medium text-gray-600">Change</p>
+              <p className="text-2xl font-bold text-black">{formatCurrency(changeDue)}</p>
+            </div>
+
             <button
               type="button"
               onClick={handleNewOrder}
@@ -249,6 +305,42 @@ export function OrderListPanel() {
           </div>
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop / iPad landscape — always-visible fixed sidebar */}
+      <aside
+        aria-label="Order list"
+        className="hidden lg:flex fixed bottom-0 right-0 top-0 z-50 w-96 flex-col bg-gradient-to-b from-white to-kiosk-lighter shadow-2xl border-l border-kiosk-muted overscroll-contain"
+      >
+        {renderPanel()}
+      </aside>
+
+      {/* Mobile / portrait — collapsed bottom bar */}
+      {stage === "cart" && !mobileExpanded && (
+        <button
+          type="button"
+          onClick={() => setMobileExpanded(true)}
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-5 py-4 text-white shadow-2xl touch-manipulation"
+        >
+          <span className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-white/40" />
+          <span className="text-sm font-semibold">
+            {cartCount} {cartCount === 1 ? "item" : "items"}
+          </span>
+          <span className="text-base font-bold">
+            {cartCount === 0 ? "View Order" : `${formatCurrency(cartTotal)} — View Order`}
+          </span>
+        </button>
+      )}
+
+      {/* Mobile / portrait — expanded full sheet (cart when opened, always during payment/change) */}
+      {(mobileExpanded || stage !== "cart") && (
+        <div className="lg:hidden fixed inset-0 z-[60] flex flex-col bg-gradient-to-b from-white to-kiosk-lighter">
+          {renderPanel(() => setMobileExpanded(false))}
+        </div>
+      )}
+    </>
   );
 }

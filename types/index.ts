@@ -10,6 +10,7 @@ export type Product = {
   section_id: string;
   name: string;
   brand_id?: string | null;
+  image_url?: string | null;
   created_at?: string;
 };
 
@@ -24,6 +25,7 @@ export type Variant = {
   product_id: string;
   label: string;
   price: number;
+  image_url?: string | null;
   created_at?: string;
 };
 

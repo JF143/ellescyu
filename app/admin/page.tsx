@@ -7,11 +7,15 @@ import { useSections } from "@/hooks/useSections";
 import { useVariants } from "@/hooks/useVariants";
 import { useBrands } from "@/hooks/useBrands";
 import { useToast } from "@/components/Toast";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { uploadProductImage } from "@/lib/uploadImage";
 import { formatCurrency } from "@/lib/formatCurrency";
 
-type VariantRow = { label: string; price: string };
-
-const emptyVariantRow = (): VariantRow => ({ label: "", price: "" });
+type PendingDelete =
+  | { type: "brand"; id: string; name: string }
+  | { type: "section"; id: string; name: string }
+  | { type: "product"; id: string; name: string }
+  | { type: "variant"; id: string; name: string };
 
 export default function AdminPage() {
   const { sections, addSection, updateSection, deleteSection } = useSections();
@@ -28,18 +32,25 @@ export default function AdminPage() {
 
   const [productSectionId, setProductSectionId] = useState("");
   const [productName, setProductName] = useState("");
-  const [productVariants, setProductVariants] = useState<VariantRow[]>([
-    emptyVariantRow(),
-  ]);
+  const [productVariantLabel, setProductVariantLabel] = useState("");
+  const [productVariantPrice, setProductVariantPrice] = useState("");
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [existingSectionId, setExistingSectionId] = useState("");
   const [existingProductId, setExistingProductId] = useState("");
   const [existingVariantLabel, setExistingVariantLabel] = useState("");
   const [existingVariantPrice, setExistingVariantPrice] = useState("");
+  const [existingVariantImageFile, setExistingVariantImageFile] = useState<File | null>(null);
+  const [existingVariantImagePreview, setExistingVariantImagePreview] = useState<string | null>(null);
+  const [isUploadingExistingImage, setIsUploadingExistingImage] = useState(false);
 
   const [manageSearchQuery, setManageSearchQuery] = useState("");
   const [brandSearchQuery, setBrandSearchQuery] = useState("");
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
+
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   const productsInSection = useMemo(
     () => products.filter((product) => product.section_id === existingSectionId),
@@ -79,22 +90,37 @@ export default function AdminPage() {
 
   const handleAddProduct = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!productSectionId || !productName.trim()) return;
+    if (!productSectionId || !productName.trim() || !productVariantLabel.trim() || !productVariantPrice.trim())
+      return;
 
-    const rows = productVariants
-      .filter((row) => row.label.trim() && row.price.trim())
-      .map((row) => ({ label: row.label.trim(), price: Number(row.price) }))
-      .filter((row) => !Number.isNaN(row.price) && row.price >= 0);
-
-    if (rows.length === 0) return;
+    const price = Number(productVariantPrice);
+    if (Number.isNaN(price) || price < 0) return;
 
     try {
-      await addProduct(productSectionId, productName.trim(), rows, productBrandId || undefined);
+      let imageUrl: string | undefined;
+      if (productImageFile) {
+        setIsUploadingImage(true);
+        imageUrl = await uploadProductImage(productImageFile);
+        setIsUploadingImage(false);
+      }
+
+      await addProduct(
+        productSectionId,
+        productName.trim(),
+        [{ label: productVariantLabel.trim(), price, image_url: imageUrl }],
+        productBrandId || undefined,
+      );
       setProductName("");
-      setProductVariants([emptyVariantRow()]);
+      setProductVariantLabel("");
+      setProductVariantPrice("");
       setProductBrandId("");
+      setProductImageFile(null);
+      setProductImagePreview(null);
+      showToast("Product added successfully");
     } catch (error) {
+      setIsUploadingImage(false);
       console.error("Failed to add product:", error);
+      showToast("Failed to add product");
     }
   };
 
@@ -104,50 +130,105 @@ export default function AdminPage() {
     if (!existingProductId || !existingVariantLabel.trim() || Number.isNaN(price)) return;
 
     try {
-      await addVariant(existingProductId, existingVariantLabel.trim(), price);
+      let imageUrl: string | undefined;
+      if (existingVariantImageFile) {
+        setIsUploadingExistingImage(true);
+        imageUrl = await uploadProductImage(existingVariantImageFile);
+        setIsUploadingExistingImage(false);
+      }
+
+      await addVariant(existingProductId, existingVariantLabel.trim(), price, imageUrl);
       setExistingVariantLabel("");
       setExistingVariantPrice("");
+      setExistingVariantImageFile(null);
+      setExistingVariantImagePreview(null);
+      showToast("Variant added successfully");
     } catch (error) {
+      setIsUploadingExistingImage(false);
       console.error("Failed to add variant:", error);
+      showToast("Failed to add variant");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    try {
+      switch (pendingDelete.type) {
+        case "brand":
+          await deleteBrand(pendingDelete.id);
+          showToast("Brand deleted");
+          break;
+        case "section":
+          await deleteSection(pendingDelete.id);
+          showToast("Category deleted");
+          break;
+        case "product":
+          await deleteProduct(pendingDelete.id);
+          showToast("Product deleted");
+          break;
+        case "variant":
+          await deleteVariant(pendingDelete.id);
+          showToast("Variant deleted");
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to delete ${pendingDelete.type}:`, error);
+      showToast(`Failed to delete ${pendingDelete.type}`);
+    } finally {
+      setPendingDelete(null);
+    }
+  };
+
+  const getDeleteMessage = () => {
+    if (!pendingDelete) return "";
+    switch (pendingDelete.type) {
+      case "brand":
+        return `Delete "${pendingDelete.name}"? Products using it will show as "Other".`;
+      case "section":
+        return `Delete "${pendingDelete.name}" and all its products?`;
+      case "product":
+        return `Delete "${pendingDelete.name}" and all its variants?`;
+      case "variant":
+        return `Delete "${pendingDelete.name}"?`;
     }
   };
 
   return (
     <div className="h-screen overflow-y-auto bg-kiosk-lighter">
-      <header className="border-b border-kiosk-muted bg-white px-8 py-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+      <header className="border-b border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-kiosk-primary">Admin</h1>
-            <p className="mt-1 text-lg text-gray-600">Manage menu categories, products, and variants</p>
+            <h1 className="text-2xl lg:text-4xl font-bold text-kiosk-primary">Admin</h1>
+            <p className="mt-1 text-sm lg:text-lg text-gray-600">Manage store categories, products, and variants</p>
           </div>
           <Link
             href="/"
-            className="rounded-2xl bg-kiosk-muted px-6 py-4 text-lg font-bold text-kiosk-primary transition hover:bg-kiosk-accent hover:text-white"
+            className="rounded-xl lg:rounded-2xl bg-kiosk-muted px-4 py-2.5 lg:px-6 lg:py-4 text-sm lg:text-lg font-bold text-kiosk-primary transition hover:bg-kiosk-accent hover:text-white"
           >
             ← Back to Kiosk
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-8 px-8 py-10 lg:grid-cols-2">
-        <section className="rounded-3xl bg-white p-6 shadow-md">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Add New Category</h2>
+      <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:gap-8 lg:px-8 lg:py-10 lg:grid-cols-2">
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Category</h2>
           <form onSubmit={handleAddSection} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Category name</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category name</span>
               <input
                 value={newSectionName}
                 onChange={(event) => setNewSectionName(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 placeholder="e.g. Snacks"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Icon (optional)</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Icon (optional)</span>
               <input
                 value={newSectionIcon}
                 onChange={(event) => setNewSectionIcon(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 placeholder="e.g. 🍿"
               />
             </label>
@@ -160,15 +241,18 @@ export default function AdminPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-md">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Add New Product</h2>
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Product</h2>
+          <p className="mb-4 -mt-2 text-xs text-gray-500">
+            Each product starts with one variant + photo. Add more variants later from "Add Variant to Existing Product" below.
+          </p>
           <form onSubmit={handleAddProduct} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Category</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category</span>
               <select
                 value={productSectionId}
                 onChange={(event) => setProductSectionId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
               >
                 <option value="">Select category</option>
                 {sections.map((section) => (
@@ -179,20 +263,20 @@ export default function AdminPage() {
               </select>
             </label>
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Product name</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Product name</span>
               <input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 placeholder="e.g. Nescafe Creamy White"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Brand</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Brand</span>
               <select
                 value={productBrandId}
                 onChange={(event) => setProductBrandId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
               >
                 <option value="">No brand</option>
                 {brands.map((brand) => (
@@ -203,65 +287,67 @@ export default function AdminPage() {
               </select>
             </label>
 
-            <div className="space-y-3">
-              <p className="text-lg font-medium text-gray-700">Variants</p>
-              {productVariants.map((row, index) => (
-                <div key={index} className="grid grid-cols-2 gap-3">
-                  <input
-                    value={row.label}
-                    onChange={(event) => {
-                      const next = [...productVariants];
-                      next[index] = { ...next[index], label: event.target.value };
-                      setProductVariants(next);
-                    }}
-                    className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
-                    placeholder="Label (e.g. Single)"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={row.price}
-                    onChange={(event) => {
-                      const next = [...productVariants];
-                      next[index] = { ...next[index], price: event.target.value };
-                      setProductVariants(next);
-                    }}
-                    className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
-                    placeholder="Price"
-                  />
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setProductVariants((prev) => [...prev, emptyVariantRow()])}
-                className="rounded-xl bg-kiosk-muted px-4 py-3 text-lg font-semibold text-kiosk-primary transition hover:bg-kiosk-light"
-              >
-                + Add another variant
-              </button>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={productVariantLabel}
+                onChange={(event) => setProductVariantLabel(event.target.value)}
+                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                placeholder="Label (e.g. Single)"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={productVariantPrice}
+                onChange={(event) => setProductVariantPrice(event.target.value)}
+                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                placeholder="Price"
+              />
             </div>
+
+            <label className="block">
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Variant Image (optional)</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setProductImageFile(file);
+                  setProductImagePreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:border-kiosk-accent"
+              />
+              {productImagePreview && (
+                <img
+                  src={productImagePreview}
+                  alt="Preview"
+                  className="mt-2 h-24 w-24 rounded-xl object-cover border border-kiosk-muted"
+                />
+              )}
+            </label>
 
             <button
               type="submit"
-              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent"
+              disabled={isUploadingImage}
+              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent disabled:opacity-50"
             >
-              Save Product
+              {isUploadingImage ? "Uploading image..." : "Save Product"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-md">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Add Variant to Existing Product</h2>
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add Variant to Existing Product</h2>
           <form onSubmit={handleAddExistingVariant} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Category</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category</span>
               <select
                 value={existingSectionId}
                 onChange={(event) => {
                   setExistingSectionId(event.target.value);
                   setExistingProductId("");
                 }}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
               >
                 <option value="">Select category</option>
                 {sections.map((section) => (
@@ -272,11 +358,11 @@ export default function AdminPage() {
               </select>
             </label>
             <label className="block">
-              <span className="mb-2 block text-lg font-medium text-gray-700">Product</span>
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Product</span>
               <select
                 value={existingProductId}
                 onChange={(event) => setExistingProductId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 disabled={!existingSectionId}
               >
                 <option value="">Select product</option>
@@ -291,7 +377,7 @@ export default function AdminPage() {
               <input
                 value={existingVariantLabel}
                 onChange={(event) => setExistingVariantLabel(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 placeholder="Variant label"
               />
               <input
@@ -300,27 +386,48 @@ export default function AdminPage() {
                 step="0.01"
                 value={existingVariantPrice}
                 onChange={(event) => setExistingVariantPrice(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
                 placeholder="Price"
               />
             </div>
+            <label className="block">
+              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Variant Image (optional)</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setExistingVariantImageFile(file);
+                  setExistingVariantImagePreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:border-kiosk-accent"
+              />
+              {existingVariantImagePreview && (
+                <img
+                  src={existingVariantImagePreview}
+                  alt="Preview"
+                  className="mt-2 h-24 w-24 rounded-xl object-cover border border-kiosk-muted"
+                />
+              )}
+            </label>
             <button
               type="submit"
-              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent"
+              disabled={isUploadingExistingImage}
+              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent disabled:opacity-50"
             >
-              Add Variant
+              {isUploadingExistingImage ? "Uploading image..." : "Add Variant"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Manage Brands</h2>
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Brands</h2>
 
           <form onSubmit={handleAddBrand} className="mb-6 flex gap-3">
             <input
               value={newBrandName}
               onChange={(event) => setNewBrandName(event.target.value)}
-              className="flex-1 rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+              className="flex-1 rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
               placeholder="e.g. Nescafe"
             />
             <button
@@ -363,7 +470,7 @@ export default function AdminPage() {
             }
 
             return (
-              <ul className="grid grid-cols-3 gap-3">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredBrands.map((brand) => (
                   <li
                     key={brand.id}
@@ -385,15 +492,7 @@ export default function AdminPage() {
                     />
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (window.confirm(`Delete brand "${brand.name}"? Products using it will show as "Other".`)) {
-                          try {
-                            await deleteBrand(brand.id);
-                          } catch (error) {
-                            console.error("Failed to delete brand:", error);
-                          }
-                        }
-                      }}
+                      onClick={() => setPendingDelete({ type: "brand", id: brand.id, name: brand.name })}
                       className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                     >
                       ✕
@@ -405,8 +504,8 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Manage Categories</h2>
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Categories</h2>
 
           <div className="relative mb-6">
             <svg
@@ -480,15 +579,7 @@ export default function AdminPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (window.confirm(`Delete category "${section.name}" and all its products?`)) {
-                          try {
-                            await deleteSection(section.id);
-                          } catch (error) {
-                            console.error("Failed to delete category:", error);
-                          }
-                        }
-                      }}
+                      onClick={() => setPendingDelete({ type: "section", id: section.id, name: section.name })}
                       className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                     >
                       Delete
@@ -500,8 +591,8 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-6 text-2xl font-bold text-kiosk-primary">Manage Menu</h2>
+        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Products</h2>
 
           <div className="relative mb-6">
             <svg
@@ -534,50 +625,9 @@ export default function AdminPage() {
               return (
                 <div key={section.id} className="rounded-2xl border border-kiosk-muted bg-kiosk-lighter p-5">
                   <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <input
-                      defaultValue={section.name}
-                      onBlur={async (event) => {
-                        const name = event.target.value.trim();
-                        if (name && name !== section.name) {
-                          try {
-                            await updateSection(section.id, { name });
-                          } catch (error) {
-                            console.error("Failed to update category:", error);
-                          }
-                        }
-                      }}
-                      className="flex-1 rounded-xl border-2 border-white bg-white px-4 py-3 text-xl font-bold text-kiosk-primary outline-none focus:border-kiosk-accent"
-                    />
-                    <input
-                      defaultValue={section.icon ?? ""}
-                      onBlur={async (event) => {
-                        const icon = event.target.value.trim();
-                        if (icon !== (section.icon ?? "")) {
-                          try {
-                            await updateSection(section.id, { icon: icon || undefined });
-                          } catch (error) {
-                            console.error("Failed to update category:", error);
-                          }
-                        }
-                      }}
-                      className="w-24 rounded-xl border-2 border-white bg-white px-4 py-3 text-center text-xl outline-none focus:border-kiosk-accent"
-                      placeholder="Icon"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (window.confirm(`Delete category "${section.name}" and all its products?`)) {
-                          try {
-                            await deleteSection(section.id);
-                          } catch (error) {
-                            console.error("Failed to delete category:", error);
-                          }
-                        }
-                      }}
-                      className="rounded-xl bg-red-100 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-200"
-                    >
-                      Delete Category
-                    </button>
+                    <h3 className="flex-1 text-xl font-bold text-kiosk-primary">
+                      {section.icon ?? "📦"} {section.name}
+                    </h3>
                   </div>
 
                   {sectionProducts.length === 0 ? (
@@ -630,17 +680,9 @@ export default function AdminPage() {
                               </select>
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  if (
-                                    window.confirm(`Delete product "${product.name}" and all variants?`)
-                                  ) {
-                                    try {
-                                      await deleteProduct(product.id);
-                                    } catch (error) {
-                                      console.error("Failed to delete product:", error);
-                                    }
-                                  }
-                                }}
+                                onClick={() =>
+                                  setPendingDelete({ type: "product", id: product.id, name: product.name })
+                                }
                                 className="rounded-xl bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                               >
                                 Delete Product
@@ -653,6 +695,33 @@ export default function AdminPage() {
                                   key={variant.id}
                                   className="flex flex-wrap items-center gap-3 rounded-xl bg-kiosk-lighter p-3"
                                 >
+                                  {variant.image_url && (
+                                    <img
+                                      src={variant.image_url}
+                                      alt={variant.label}
+                                      className="h-12 w-12 rounded-lg object-cover border border-kiosk-muted"
+                                    />
+                                  )}
+                                  <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-3 py-2 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
+                                    {variant.image_url ? "Change" : "Add Photo"}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (event) => {
+                                        const file = event.target.files?.[0];
+                                        if (!file) return;
+                                        try {
+                                          const imageUrl = await uploadProductImage(file);
+                                          await updateVariant(variant.id, { image_url: imageUrl });
+                                          showToast("Image updated");
+                                        } catch (error) {
+                                          console.error("Failed to upload image:", error);
+                                          showToast("Failed to upload image");
+                                        }
+                                      }}
+                                    />
+                                  </label>
                                   <input
                                     defaultValue={variant.label}
                                     onBlur={(event) => {
@@ -681,7 +750,13 @@ export default function AdminPage() {
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => deleteVariant(variant.id)}
+                                    onClick={() =>
+                                      setPendingDelete({
+                                        type: "variant",
+                                        id: variant.id,
+                                        name: `${product.name} (${variant.label})`,
+                                      })
+                                    }
                                     className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                                   >
                                     Delete
@@ -700,6 +775,22 @@ export default function AdminPage() {
           </div>
         </section>
       </main>
+
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        title={
+          pendingDelete
+            ? `Delete ${
+                pendingDelete.type === "section"
+                  ? "Category"
+                  : pendingDelete.type.charAt(0).toUpperCase() + pendingDelete.type.slice(1)
+              }`
+            : ""
+        }
+        message={getDeleteMessage()}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

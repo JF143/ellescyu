@@ -32,9 +32,15 @@ export function useVariants() {
   }, [fetchVariants]);
 
   const addVariant = useCallback(
-    async (productId: string, label: string, price: number) => {
+    async (productId: string, label: string, price: number, imageUrl?: string) => {
       try {
-        const variant: Variant = { id: uuidv4(), product_id: productId, label, price };
+        const variant: Variant = {
+          id: uuidv4(),
+          product_id: productId,
+          label,
+          price,
+          image_url: imageUrl || null,
+        };
         const { error } = await supabase.from("variants").insert(variant);
 
         if (error) throw error;
@@ -50,7 +56,7 @@ export function useVariants() {
   );
 
   const updateVariant = useCallback(
-    async (id: string, updates: Partial<Pick<Variant, "label" | "price">>) => {
+    async (id: string, updates: Partial<Pick<Variant, "label" | "price" | "image_url">>) => {
       try {
         const { error } = await supabase
           .from("variants")
@@ -95,4 +101,3 @@ export function useVariants() {
     deleteVariant,
   };
 }
-
