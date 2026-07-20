@@ -37,3 +37,35 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+/* Micro-interaction utilities */
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 4px 12px rgba(80, 129, 190, 0.08);
+  }
+
+  .card-shadow-lg {
+    box-shadow: 0 8px 24px rgba(80, 129, 190, 0.12);
+  }
+
+  .card-shadow-xl {
+    box-shadow: 0 12px 32px rgba(80, 129, 190, 0.15);
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .tap-scale {
+    @apply active:scale-95;
+  }
+
+  .hover-lift {
+    transition: all 0.2s ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(80, 129, 190, 0.12);
+  }
+}

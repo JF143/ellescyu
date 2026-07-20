@@ -54,10 +54,10 @@ export function BrandRibbon({ brands, selectedBrand, onSelectBrand }: BrandRibbo
       <button
         type="button"
         onClick={() => handleSelect(null)}
-        className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold transition ${
+        className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold smooth-transition tap-scale ${
           selectedBrand === null
-            ? "bg-kiosk-primary text-white shadow-md"
-            : "bg-white text-kiosk-primary hover:bg-kiosk-light"
+            ? "bg-kiosk-primary text-white card-shadow-lg"
+            : "bg-white text-kiosk-primary border border-kiosk-muted hover:bg-kiosk-light"
         }`}
       >
         All Brands
@@ -67,10 +67,10 @@ export function BrandRibbon({ brands, selectedBrand, onSelectBrand }: BrandRibbo
           key={b}
           type="button"
           onClick={() => handleSelect(b)}
-          className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold transition ${
+          className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold smooth-transition tap-scale ${
             selectedBrand === b
-              ? "bg-kiosk-primary text-white shadow-md"
-              : "bg-white text-kiosk-primary hover:bg-kiosk-light"
+              ? "bg-kiosk-primary text-white card-shadow-lg"
+              : "bg-white text-kiosk-primary border border-kiosk-muted hover:bg-kiosk-light"
           }`}
         >
           {b}
