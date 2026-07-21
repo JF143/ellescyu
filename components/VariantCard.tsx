@@ -17,24 +17,28 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
       <button
         type="button"
         onClick={onAdd}
-        className="flex w-full flex-col items-start gap-2 rounded-2xl bg-white p-4 text-left shadow-md transition hover:-translate-y-2 hover:shadow-lg active:scale-[0.98] touch-manipulation"
+        className="flex w-full flex-col items-start gap-3 rounded-[18px] bg-white p-5 text-left card-shadow hover-lift tap-scale touch-manipulation"
       >
-        <div className="flex flex-col gap-0.5 pr-14">
-          <p className="text-base font-bold text-gray-900 leading-tight">{productName}</p>
-          <p className="text-xs font-medium text-kiosk-primary">{variant.label}</p>
+        <div className="flex w-full flex-col gap-1">
+          <p className="text-base font-bold text-gray-900 leading-snug">{productName}</p>
+          <p className="text-xs font-medium text-kiosk-accent uppercase tracking-wide">{variant.label}</p>
         </div>
 
         {variant.image_url && (
-          <img
-            src={variant.image_url}
-            alt={`${productName} - ${variant.label}`}
-            className="h-16 w-16 self-center rounded-lg object-cover"
-          />
+          <div className="w-full flex justify-center py-2">
+            <img
+              src={variant.image_url}
+              alt={`${productName} - ${variant.label}`}
+              className="h-20 w-20 rounded-[14px] object-cover shadow-[0_2px_8px_rgba(80,129,190,0.12)]"
+            />
+          </div>
         )}
 
-        <p className="text-xl font-bold text-black">{formatCurrency(variant.price)}</p>
+        <div className="w-full pt-2">
+          <p className="text-2xl font-bold text-kiosk-primary">{formatCurrency(variant.price)}</p>
+        </div>
       </button>
-      <div className="absolute top-3 right-3 flex gap-1">
+      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 smooth-transition">
         {onEdit && (
           <button
             type="button"
@@ -43,12 +47,12 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
               onEdit();
             }}
             aria-label="Edit variant"
-            className="flex h-6 w-6 items-center justify-center transition hover:text-kiosk-accent touch-manipulation"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-kiosk-light text-kiosk-primary hover:bg-kiosk-muted active:scale-90 smooth-transition touch-manipulation"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -69,12 +73,12 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
               onDelete();
             }}
             aria-label="Delete variant"
-            className="flex h-6 w-6 items-center justify-center transition hover:text-red-500 touch-manipulation"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 active:scale-90 smooth-transition touch-manipulation"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

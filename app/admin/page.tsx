@@ -195,15 +195,15 @@ export default function AdminPage() {
 
   return (
     <div className="h-screen overflow-y-auto bg-kiosk-lighter">
-      <header className="border-b border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6">
+      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl lg:text-4xl font-bold text-kiosk-primary">Admin</h1>
-            <p className="mt-1 text-sm lg:text-lg text-gray-600">Manage store categories, products, and variants</p>
+            <p className="mt-1 text-xs lg:text-sm font-medium text-gray-600 uppercase tracking-wide">Manage categories, products, and variants</p>
           </div>
           <Link
             href="/"
-            className="rounded-xl lg:rounded-2xl bg-kiosk-muted px-4 py-2.5 lg:px-6 lg:py-4 text-sm lg:text-lg font-bold text-kiosk-primary transition hover:bg-kiosk-accent hover:text-white"
+            className="rounded-[14px] lg:rounded-[16px] bg-kiosk-muted px-4 py-2.5 lg:px-6 lg:py-4 text-sm lg:text-lg font-bold text-kiosk-primary smooth-transition tap-scale hover:bg-kiosk-accent hover:text-white"
           >
             ← Back to Kiosk
           </Link>
@@ -211,48 +211,48 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:gap-8 lg:px-8 lg:py-10 lg:grid-cols-2">
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
           <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Category</h2>
           <form onSubmit={handleAddSection} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category name</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category name</span>
               <input
                 value={newSectionName}
                 onChange={(event) => setNewSectionName(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="e.g. Snacks"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Icon (optional)</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Icon (optional)</span>
               <input
                 value={newSectionIcon}
                 onChange={(event) => setNewSectionIcon(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="e.g. 🍿"
               />
             </label>
             <button
               type="submit"
-              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent"
+              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
             >
               Add Category
             </button>
           </form>
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
           <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Product</h2>
           <p className="mb-4 -mt-2 text-xs text-gray-500">
             Each product starts with one variant + photo. Add more variants later from "Add Variant to Existing Product" below.
           </p>
           <form onSubmit={handleAddProduct} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
               <select
                 value={productSectionId}
                 onChange={(event) => setProductSectionId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               >
                 <option value="">Select category</option>
                 {sections.map((section) => (
@@ -263,20 +263,20 @@ export default function AdminPage() {
               </select>
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Product name</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product name</span>
               <input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="e.g. Nescafe Creamy White"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Brand</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Brand</span>
               <select
                 value={productBrandId}
                 onChange={(event) => setProductBrandId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               >
                 <option value="">No brand</option>
                 {brands.map((brand) => (
@@ -291,7 +291,7 @@ export default function AdminPage() {
               <input
                 value={productVariantLabel}
                 onChange={(event) => setProductVariantLabel(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="Label (e.g. Single)"
               />
               <input
@@ -300,13 +300,13 @@ export default function AdminPage() {
                 step="0.01"
                 value={productVariantPrice}
                 onChange={(event) => setProductVariantPrice(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="Price"
               />
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Variant Image (optional)</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -315,13 +315,13 @@ export default function AdminPage() {
                   setProductImageFile(file);
                   setProductImagePreview(file ? URL.createObjectURL(file) : null);
                 }}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               />
               {productImagePreview && (
                 <img
                   src={productImagePreview}
                   alt="Preview"
-                  className="mt-2 h-24 w-24 rounded-xl object-cover border border-kiosk-muted"
+                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
                 />
               )}
             </label>
@@ -329,25 +329,25 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={isUploadingImage}
-              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent disabled:opacity-50"
+              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
             >
               {isUploadingImage ? "Uploading image..." : "Save Product"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md">
+        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
           <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add Variant to Existing Product</h2>
           <form onSubmit={handleAddExistingVariant} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Category</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
               <select
                 value={existingSectionId}
                 onChange={(event) => {
                   setExistingSectionId(event.target.value);
                   setExistingProductId("");
                 }}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               >
                 <option value="">Select category</option>
                 {sections.map((section) => (
@@ -358,11 +358,11 @@ export default function AdminPage() {
               </select>
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Product</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product</span>
               <select
                 value={existingProductId}
                 onChange={(event) => setExistingProductId(event.target.value)}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 disabled={!existingSectionId}
               >
                 <option value="">Select product</option>
@@ -377,7 +377,7 @@ export default function AdminPage() {
               <input
                 value={existingVariantLabel}
                 onChange={(event) => setExistingVariantLabel(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="Variant label"
               />
               <input
@@ -386,12 +386,12 @@ export default function AdminPage() {
                 step="0.01"
                 value={existingVariantPrice}
                 onChange={(event) => setExistingVariantPrice(event.target.value)}
-                className="rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
                 placeholder="Price"
               />
             </div>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-medium text-gray-700">Variant Image (optional)</span>
+              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -400,39 +400,39 @@ export default function AdminPage() {
                   setExistingVariantImageFile(file);
                   setExistingVariantImagePreview(file ? URL.createObjectURL(file) : null);
                 }}
-                className="w-full rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:border-kiosk-accent"
+                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               />
               {existingVariantImagePreview && (
                 <img
                   src={existingVariantImagePreview}
                   alt="Preview"
-                  className="mt-2 h-24 w-24 rounded-xl object-cover border border-kiosk-muted"
+                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
                 />
               )}
             </label>
             <button
               type="submit"
               disabled={isUploadingExistingImage}
-              className="w-full rounded-2xl bg-kiosk-primary py-4 text-lg font-bold text-white transition hover:bg-kiosk-accent disabled:opacity-50"
+              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
             >
               {isUploadingExistingImage ? "Uploading image..." : "Add Variant"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
+        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow lg:col-span-2">
           <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Brands</h2>
 
           <form onSubmit={handleAddBrand} className="mb-6 flex gap-3">
             <input
               value={newBrandName}
               onChange={(event) => setNewBrandName(event.target.value)}
-              className="flex-1 rounded-xl border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:border-kiosk-accent"
+              className="flex-1 rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
               placeholder="e.g. Nescafe"
             />
             <button
               type="submit"
-              className="rounded-2xl bg-kiosk-primary px-6 py-3 text-lg font-bold text-white transition hover:bg-kiosk-accent"
+              className="rounded-[14px] bg-kiosk-primary px-6 py-3 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
             >
               Add Brand
             </button>

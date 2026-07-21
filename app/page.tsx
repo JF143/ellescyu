@@ -85,13 +85,13 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => handleSelectSection(null)}
-        className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+        className={`w-full flex items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold smooth-transition tap-scale ${
           selectedSectionId === null
-            ? "bg-kiosk-light text-kiosk-primary font-bold"
-            : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary"
+            ? "bg-kiosk-primary text-white card-shadow"
+            : "text-gray-700 hover:bg-kiosk-light hover:text-kiosk-primary"
         }`}
       >
-        <span className="text-xl">🗂️</span>
+        <span className="text-lg flex-shrink-0">🗂️</span>
         <span className="truncate">All Categories</span>
       </button>
 
@@ -100,13 +100,13 @@ export default function HomePage() {
           key={section.id}
           type="button"
           onClick={() => handleSelectSection(section.id)}
-          className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+          className={`w-full flex items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold smooth-transition tap-scale ${
             selectedSectionId === section.id
-              ? "bg-kiosk-light text-kiosk-primary font-bold"
-              : "text-gray-700 hover:bg-kiosk-lighter hover:text-kiosk-primary"
+              ? "bg-kiosk-primary text-white card-shadow"
+              : "text-gray-700 hover:bg-kiosk-light hover:text-kiosk-primary"
           }`}
         >
-          <span className="text-xl">{section.icon ?? "📦"}</span>
+          <span className="text-lg flex-shrink-0">{section.icon ?? "📦"}</span>
           <span className="truncate">{section.name}</span>
         </button>
       ))}
@@ -198,13 +198,13 @@ export default function HomePage() {
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kiosk-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-kiosk-muted bg-kiosk-lighter text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition"
-                />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2.5 rounded-[12px] border border-kiosk-muted bg-white text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition card-shadow"
+              />
               </div>
             </div>
             <div className="p-3 space-y-1">{renderCategoryButtons()}</div>
@@ -282,7 +282,7 @@ export default function HomePage() {
               value={productSearchQuery}
               onChange={(e) => setProductSearchQuery(e.target.value)}
               autoFocus={mobileSearchOpen}
-              className="w-full rounded-2xl border border-kiosk-muted bg-white pl-12 pr-4 py-4 text-lg text-gray-900 placeholder-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-kiosk-primary transition"
+              className="w-full rounded-[16px] border border-kiosk-muted bg-white pl-12 pr-4 py-4 text-lg text-gray-900 placeholder-gray-400 card-shadow outline-none focus:ring-2 focus:ring-kiosk-primary smooth-transition"
             />
           </div>
 
@@ -304,15 +304,27 @@ export default function HomePage() {
           </div>
 
           {visibleItems.length === 0 && (
-            <p className="mt-12 text-center text-xl text-gray-500">
-              {productSearchQuery.trim()
-                ? `No products match "${productSearchQuery}"${selectedSection ? ` in ${selectedSection.name}` : ""}.`
-                : selectedBrand
-                ? `No products found for ${selectedBrand}${selectedSection ? ` in ${selectedSection.name}` : ""}.`
-                : sections.length === 0
-                ? "No sections yet. Add some in Admin settings."
-                : "No products found."}
-            </p>
+            <div className="mt-16 flex flex-col items-center justify-center text-center">
+              <p className="text-5xl mb-4">🔍</p>
+              <p className="text-lg font-semibold text-gray-700 mb-2">
+                {productSearchQuery.trim()
+                  ? `No products match "${productSearchQuery}"`
+                  : selectedBrand
+                  ? `No products for ${selectedBrand}`
+                  : sections.length === 0
+                  ? "No categories yet"
+                  : "No products available"}
+              </p>
+              <p className="text-sm text-gray-500 max-w-md">
+                {productSearchQuery.trim()
+                  ? "Try adjusting your search or browse by category"
+                  : selectedBrand
+                  ? `${selectedSection ? `Browse other brands in ${selectedSection.name}` : "Try selecting all brands"}`
+                  : sections.length === 0
+                  ? "Visit Admin settings to add categories and products"
+                  : "Add products in Admin settings to get started"}
+              </p>
+            </div>
           )}
         </div>
       </main>
