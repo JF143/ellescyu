@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 import { useMounted } from "@/hooks/useMounted";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -16,6 +17,7 @@ const SCROLL_HIDDEN =
 export function OrderListPanel() {
   const mounted = useMounted();
   const pathname = usePathname();
+  const router = useRouter();
   const {
     cart,
     cartTotal,
@@ -30,6 +32,9 @@ export function OrderListPanel() {
   const [amountInput, setAmountInput] = useState("");
   const [changeDue, setChangeDue] = useState(0);
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(0);
+  const [sheetTranslate, setSheetTranslate] = useState(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   if (!mounted || pathname.startsWith("/admin")) {
     return null;
@@ -69,6 +74,52 @@ export function OrderListPanel() {
     setMobileExpanded(false);
   };
 
+  // Swipe gesture handlers for mobile sheet
+  const handleTouchStartSheet = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMoveSheet = (e: React.TouchEvent) => {
+    if (!sheetRef.current) return;
+    const touchCurrentY = e.touches[0].clientY;
+    const diff = touchStartY - touchCurrentY;
+    
+    // Only allow dragging upwards when sheet is collapsed
+    if (!mobileExpanded && diff > 0 && diff < 400) {
+      setSheetTranslate(-diff);
+    }
+    // Allow dragging downwards when sheet is expanded to close it
+    else if (mobileExpanded && diff < 0 && diff > -100) {
+      setSheetTranslate(diff);
+    }
+  };
+
+  const handleTouchEndSheet = () => {
+    // If dragged up more than 15% of viewport, expand it
+    if (sheetTranslate < -60) {
+      setMobileExpanded(true);
+    }
+    // If dragged down more than 10% when expanded, collapse it
+    else if (mobileExpanded && sheetTranslate > 30) {
+      setMobileExpanded(false);
+    }
+    setSheetTranslate(0);
+  };
+
+  const handleBackClick = () => {
+    if (stage !== "cart") {
+      setStage("cart");
+      setAmountInput("");
+    } else if (mobileExpanded) {
+      setMobileExpanded(false);
+    } else {
+      // Only navigate away if on desktop and no active order
+      if (cartCount === 0) {
+        router.back();
+      }
+    }
+  };
+
   const renderPanel = (onClose?: () => void) => (
     <>
       <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 backdrop-blur border-b-2 border-kiosk-muted px-6 py-5">
@@ -82,11 +133,11 @@ export function OrderListPanel() {
               : "Payment complete"}
           </p>
         </div>
-        {onClose && stage === "cart" && (
+        {(onClose || stage !== "cart") && (
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close order"
+            onClick={() => (stage !== "cart" ? setStage("cart") : onClose?.())}
+            aria-label={stage !== "cart" ? "Back to cart" : "Close order"}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-kiosk-primary hover:bg-kiosk-light smooth-transition tap-scale"
           >
             <svg
@@ -100,7 +151,11 @@ export function OrderListPanel() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M6 9l6 6 6-6" />
+              {stage !== "cart" ? (
+                <path d="M15 19l-7-7 7-7" />
+              ) : (
+                <path d="M6 9l6 6 6-6" />
+              )}
             </svg>
           </button>
         )}
@@ -325,7 +380,11 @@ export function OrderListPanel() {
         <button
           type="button"
           onClick={() => setMobileExpanded(true)}
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-5 py-4 text-white card-shadow-xl touch-manipulation"
+          onTouchStart={handleTouchStartSheet}
+          onTouchMove={handleTouchMoveSheet}
+          onTouchEnd={handleTouchEndSheet}
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-5 py-4 text-white card-shadow-xl touch-manipulation transition-transform duration-300"
+          style={{ transform: `translateY(${Math.max(0, sheetTranslate)}px)` }}
         >
           <span className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-white/40" />
           <span className="text-sm font-semibold">
@@ -338,11 +397,17 @@ export function OrderListPanel() {
       )}
 
       {/* Mobile / portrait — expanded full sheet (cart when opened, always during payment/change) */}
-      {(mobileExpanded || stage !== "cart") && (
-        <div className="lg:hidden fixed inset-0 z-[60] flex flex-col bg-gradient-to-b from-white to-kiosk-lighter">
-          {renderPanel(() => setMobileExpanded(false))}
-        </div>
-      )}
+      <div
+        ref={sheetRef}
+        className={`lg:hidden fixed inset-0 z-[60] flex flex-col bg-gradient-to-b from-white to-kiosk-lighter transition-all duration-300 ease-out ${
+          mobileExpanded || stage !== "cart" ? "translate-y-0 opacity-100 pointer-events-auto" : "translate-y-full opacity-0 pointer-events-none"
+        }`}
+        onTouchStart={handleTouchStartSheet}
+        onTouchMove={handleTouchMoveSheet}
+        onTouchEnd={handleTouchEndSheet}
+      >
+        {renderPanel(() => setMobileExpanded(false))}
+      </div>
     </>
   );
 }
