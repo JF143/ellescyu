@@ -32,8 +32,8 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
               className="h-32 w-32 rounded-[14px] object-cover"
             />
           ) : (
-            <div className="flex h-32 w-32 items-center justify-center rounded-[14px] bg-kiosk-lighter text-4xl">
-              📦
+            <div className="flex h-32 w-32 items-center justify-center rounded-[14px] bg-white text-4xl">
+              N/A
             </div>
           )}
         </div>
