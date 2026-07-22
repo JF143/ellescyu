@@ -25,11 +25,11 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
         </div>
 
         {variant.image_url && (
-          <div className="w-full flex justify-center py-2">
+          <div className="w-full flex justify-center py-3">
             <img
               src={variant.image_url}
               alt={`${productName} - ${variant.label}`}
-              className="h-20 w-20 rounded-[14px] object-cover shadow-[0_2px_8px_rgba(80,129,190,0.12)]"
+              className="h-32 w-32 rounded-[14px] object-cover"
             />
           </div>
         )}

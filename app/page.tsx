@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useMounted } from "@/hooks/useMounted";
 import { useClock } from "@/hooks/useClocks";
 import { VariantCard } from "@/components/VariantCard";
@@ -23,6 +23,8 @@ export default function HomePage() {
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const mainRef = useRef<HTMLDivElement>(null);
   const { addToCart } = useCart();
 
   const {
@@ -78,6 +80,21 @@ export default function HomePage() {
     setSelectedSectionId(sectionId);
     setSelectedBrand(null);
     setMobileCategoriesOpen(false);
+  };
+
+  // Swipe gesture handlers for mobile drawer
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touchCurrentX = e.touches[0].clientX;
+    const diff = touchCurrentX - touchStartX;
+    
+    // Open drawer if swiped right more than 50px from left edge
+    if (diff > 50 && touchStartX < 30 && !mobileCategoriesOpen) {
+      setMobileCategoriesOpen(true);
+    }
   };
 
   const renderCategoryButtons = () => (
@@ -167,9 +184,27 @@ export default function HomePage() {
       </div>
 
       {/* Mobile / portrait categories drawer */}
-      {mobileCategoriesOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 max-w-[80%] overflow-y-auto bg-white shadow-2xl">
+      <div
+        className={`lg:hidden fixed inset-0 z-50 flex transition-all duration-300 ease-out ${
+          mobileCategoriesOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
+        {/* Backdrop overlay */}
+        <div
+          className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+            mobileCategoriesOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setMobileCategoriesOpen(false)}
+        />
+        
+        {/* Drawer panel */}
+        <div
+          className={`w-72 max-w-[80%] overflow-y-auto bg-white shadow-2xl transition-all duration-300 ease-out ${
+            mobileCategoriesOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
             <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
@@ -210,7 +245,8 @@ export default function HomePage() {
             <div className="p-3 space-y-1">{renderCategoryButtons()}</div>
           </div>
         </div>
-      )}
+      </div>
+      </div>
 
       {/* Desktop / iPad landscape sidebar */}
       <aside className="hidden lg:block fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -244,7 +280,12 @@ export default function HomePage() {
         <div className="p-3 space-y-1">{renderCategoryButtons()}</div>
       </aside>
 
-      <main className="pt-16 lg:pt-0 pb-24 lg:pb-0 lg:ml-72 lg:mr-96 flex-1 h-screen overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <main
+        ref={mainRef}
+        className="pt-16 lg:pt-0 pb-24 lg:pb-0 lg:ml-72 lg:mr-96 flex-1 h-screen overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
         <div className="px-4 py-6 lg:px-8 lg:py-12">
           <header className="mb-6 hidden lg:flex items-start justify-between">
             <div>
@@ -273,16 +314,16 @@ export default function HomePage() {
           </header>
 
           <div className={`relative mb-6 ${mobileSearchOpen ? "block" : "hidden"} lg:block`}>
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-primary pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search"
               value={productSearchQuery}
               onChange={(e) => setProductSearchQuery(e.target.value)}
               autoFocus={mobileSearchOpen}
-              className="w-full rounded-[16px] border border-kiosk-muted bg-white pl-12 pr-4 py-4 text-lg text-gray-900 placeholder-gray-400 card-shadow outline-none focus:ring-2 focus:ring-kiosk-primary smooth-transition"
+              className="w-full rounded-full border-2 border-kiosk-primary bg-white pl-12 pr-4 py-3 text-base text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-kiosk-primary smooth-transition"
             />
           </div>
 

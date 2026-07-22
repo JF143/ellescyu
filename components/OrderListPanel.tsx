@@ -224,10 +224,10 @@ export function OrderListPanel() {
             )}
           </ul>
 
-          <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent border-t-2 border-kiosk-muted px-6 py-6 space-y-4">
+          <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent border-t-2 border-kiosk-muted px-6 py-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Subtotal</span>
-              <span className="text-2xl font-bold text-kiosk-primary">
+              <span className="text-lg font-bold text-kiosk-primary">
                 {formatCurrency(cartTotal)}
               </span>
             </div>
