@@ -243,9 +243,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="p-3 space-y-1">{renderCategoryButtons()}</div>
-          </div>
         </div>
-      </div>
       </div>
 
       {/* Desktop / iPad landscape sidebar */}

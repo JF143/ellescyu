@@ -24,15 +24,19 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
           <p className="text-xs font-medium text-kiosk-accent uppercase tracking-wide">{variant.label}</p>
         </div>
 
-        {variant.image_url && (
-          <div className="w-full flex justify-center py-3">
+        <div className="w-full flex justify-center py-3">
+          {variant.image_url ? (
             <img
               src={variant.image_url}
               alt={`${productName} - ${variant.label}`}
               className="h-32 w-32 rounded-[14px] object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <div className="flex h-32 w-32 items-center justify-center rounded-[14px] bg-kiosk-lighter text-4xl">
+              📦
+            </div>
+          )}
+        </div>
 
         <div className="w-full pt-2">
           <p className="text-2xl font-bold text-kiosk-primary">{formatCurrency(variant.price)}</p>
