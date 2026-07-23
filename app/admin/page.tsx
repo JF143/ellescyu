@@ -47,6 +47,7 @@ export default function AdminPage() {
   const [isUploadingExistingImage, setIsUploadingExistingImage] = useState(false);
 
   const [manageSearchQuery, setManageSearchQuery] = useState("");
+  const [manageCategoryFilter, setManageCategoryFilter] = useState("");
   const [brandSearchQuery, setBrandSearchQuery] = useState("");
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
 
@@ -594,184 +595,200 @@ export default function AdminPage() {
         <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
           <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Products</h2>
 
-          <div className="relative mb-6">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={manageSearchQuery}
+                onChange={(event) => setManageSearchQuery(event.target.value)}
+                placeholder="Search products..."
+                className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+              />
+            </div>
+            <select
+              value={manageCategoryFilter}
+              onChange={(event) => setManageCategoryFilter(event.target.value)}
+              className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent sm:w-56"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={manageSearchQuery}
-              onChange={(event) => setManageSearchQuery(event.target.value)}
-              placeholder="Search products..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
-            />
+              <option value="">All Categories</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.icon ?? "📦"} {section.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-8">
-            {sections.map((section) => {
-              const sectionProducts = products.filter(
-                (product) =>
-                  product.section_id === section.id &&
-                  product.name.toLowerCase().includes(manageSearchQuery.toLowerCase()),
-              );
+            {sections
+              .filter((section) => !manageCategoryFilter || section.id === manageCategoryFilter)
+              .map((section) => {
+                const sectionProducts = products.filter(
+                  (product) =>
+                    product.section_id === section.id &&
+                    product.name.toLowerCase().includes(manageSearchQuery.toLowerCase()),
+                );
 
-              if (manageSearchQuery && sectionProducts.length === 0) return null;
+                if (manageSearchQuery && sectionProducts.length === 0) return null;
 
-              return (
-                <div key={section.id} className="rounded-2xl border border-kiosk-muted bg-kiosk-lighter p-5">
-                  <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <h3 className="flex-1 text-xl font-bold text-kiosk-primary">
-                      {section.icon ?? "📦"} {section.name}
-                    </h3>
-                  </div>
+                return (
+                  <div key={section.id} className="rounded-2xl border border-kiosk-muted bg-kiosk-lighter p-5">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <h3 className="flex-1 text-xl font-bold text-kiosk-primary">
+                        {section.icon ?? "📦"} {section.name}
+                      </h3>
+                    </div>
 
-                  {sectionProducts.length === 0 ? (
-                    <p className="text-gray-500">No products in this category.</p>
-                  ) : (
-                    <ul className="space-y-4">
-                      {sectionProducts.map((product) => {
-                        const productVariants = variants.filter(
-                          (variant) => variant.product_id === product.id,
-                        );
+                    {sectionProducts.length === 0 ? (
+                      <p className="text-gray-500">No products in this category.</p>
+                    ) : (
+                      <ul className="space-y-4">
+                        {sectionProducts.map((product) => {
+                          const productVariants = variants.filter(
+                            (variant) => variant.product_id === product.id,
+                          );
 
-                        return (
-                          <li
-                            key={product.id}
-                            className="rounded-2xl border border-kiosk-muted bg-white p-4"
-                          >
-                            <div className="mb-3 flex flex-wrap items-center gap-3">
-                              <input
-                                defaultValue={product.name}
-                                onBlur={async (event) => {
-                                  const name = event.target.value.trim();
-                                  if (name && name !== product.name) {
-                                    try {
-                                      await updateProduct(product.id, { name });
-                                    } catch (error) {
-                                      console.error("Failed to update product:", error);
+                          return (
+                            <li
+                              key={product.id}
+                              className="rounded-2xl border border-kiosk-muted bg-white p-4"
+                            >
+                              <div className="mb-3 flex flex-wrap items-center gap-3">
+                                <input
+                                  defaultValue={product.name}
+                                  onBlur={async (event) => {
+                                    const name = event.target.value.trim();
+                                    if (name && name !== product.name) {
+                                      try {
+                                        await updateProduct(product.id, { name });
+                                      } catch (error) {
+                                        console.error("Failed to update product:", error);
+                                      }
                                     }
-                                  }
-                                }}
-                                className="flex-1 rounded-xl border-2 border-kiosk-muted px-4 py-2 text-lg font-semibold outline-none focus:border-kiosk-accent"
-                              />
-                              <select
-                                defaultValue={product.brand_id ?? ""}
-                                onChange={async (event) => {
-                                  const brandId = event.target.value || null;
-                                  try {
-                                    await updateProduct(product.id, { brand_id: brandId });
-                                  } catch (error) {
-                                    console.error("Failed to update product brand:", error);
-                                  }
-                                }}
-                                className="rounded-xl border-2 border-kiosk-muted px-3 py-2 outline-none focus:border-kiosk-accent"
-                              >
-                                <option value="">No brand</option>
-                                {brands.map((brand) => (
-                                  <option key={brand.id} value={brand.id}>
-                                    {brand.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPendingDelete({ type: "product", id: product.id, name: product.name })
-                                }
-                                className="rounded-xl bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                              >
-                                Delete Product
-                              </button>
-                            </div>
-
-                            <ul className="space-y-2">
-                              {productVariants.map((variant) => (
-                                <li
-                                  key={variant.id}
-                                  className="flex flex-wrap items-center gap-3 rounded-xl bg-kiosk-lighter p-3"
+                                  }}
+                                  className="flex-1 rounded-xl border-2 border-kiosk-muted px-4 py-2 text-lg font-semibold outline-none focus:border-kiosk-accent"
+                                />
+                                <select
+                                  defaultValue={product.brand_id ?? ""}
+                                  onChange={async (event) => {
+                                    const brandId = event.target.value || null;
+                                    try {
+                                      await updateProduct(product.id, { brand_id: brandId });
+                                    } catch (error) {
+                                      console.error("Failed to update product brand:", error);
+                                    }
+                                  }}
+                                  className="rounded-xl border-2 border-kiosk-muted px-3 py-2 outline-none focus:border-kiosk-accent"
                                 >
-                                  {variant.image_url && (
-                                    <img
-                                      src={variant.image_url}
-                                      alt={variant.label}
-                                      className="h-12 w-12 rounded-lg object-cover border border-kiosk-muted"
-                                    />
-                                  )}
-                                  <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-3 py-2 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
-                                    {variant.image_url ? "Change" : "Add Photo"}
+                                  <option value="">No brand</option>
+                                  {brands.map((brand) => (
+                                    <option key={brand.id} value={brand.id}>
+                                      {brand.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPendingDelete({ type: "product", id: product.id, name: product.name })
+                                  }
+                                  className="rounded-xl bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                                >
+                                  Delete Product
+                                </button>
+                              </div>
+
+                              <ul className="space-y-2">
+                                {productVariants.map((variant) => (
+                                  <li
+                                    key={variant.id}
+                                    className="flex flex-wrap items-center gap-3 rounded-xl bg-kiosk-lighter p-3"
+                                  >
+                                    {variant.image_url && (
+                                      <img
+                                        src={variant.image_url}
+                                        alt={variant.label}
+                                        className="h-12 w-12 rounded-lg object-cover border border-kiosk-muted"
+                                      />
+                                    )}
+                                    <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-3 py-2 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
+                                      {variant.image_url ? "Change" : "Add Photo"}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (event) => {
+                                          const file = event.target.files?.[0];
+                                          if (!file) return;
+                                          try {
+                                            const imageUrl = await uploadProductImage(file);
+                                            await updateVariant(variant.id, { image_url: imageUrl });
+                                            showToast("Image updated");
+                                          } catch (error) {
+                                            console.error("Failed to upload image:", error);
+                                            showToast("Failed to upload image");
+                                          }
+                                        }}
+                                      />
+                                    </label>
                                     <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={async (event) => {
-                                        const file = event.target.files?.[0];
-                                        if (!file) return;
-                                        try {
-                                          const imageUrl = await uploadProductImage(file);
-                                          await updateVariant(variant.id, { image_url: imageUrl });
-                                          showToast("Image updated");
-                                        } catch (error) {
-                                          console.error("Failed to upload image:", error);
-                                          showToast("Failed to upload image");
+                                      defaultValue={variant.label}
+                                      onBlur={(event) => {
+                                        const label = event.target.value.trim();
+                                        if (label && label !== variant.label) {
+                                          updateVariant(variant.id, { label });
                                         }
                                       }}
+                                      className="flex-1 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
                                     />
-                                  </label>
-                                  <input
-                                    defaultValue={variant.label}
-                                    onBlur={(event) => {
-                                      const label = event.target.value.trim();
-                                      if (label && label !== variant.label) {
-                                        updateVariant(variant.id, { label });
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      defaultValue={variant.price}
+                                      onBlur={(event) => {
+                                        const price = Number(event.target.value);
+                                        if (!Number.isNaN(price) && price !== variant.price) {
+                                          updateVariant(variant.id, { price });
+                                        }
+                                      }}
+                                      className="w-28 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
+                                    />
+                                    <span className="font-semibold text-black">
+                                      {formatCurrency(variant.price)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPendingDelete({
+                                          type: "variant",
+                                          id: variant.id,
+                                          name: `${product.name} (${variant.label})`,
+                                        })
                                       }
-                                    }}
-                                    className="flex-1 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                  />
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    defaultValue={variant.price}
-                                    onBlur={(event) => {
-                                      const price = Number(event.target.value);
-                                      if (!Number.isNaN(price) && price !== variant.price) {
-                                        updateVariant(variant.id, { price });
-                                      }
-                                    }}
-                                    className="w-28 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                  />
-                                  <span className="font-semibold text-black">
-                                    {formatCurrency(variant.price)}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setPendingDelete({
-                                        type: "variant",
-                                        id: variant.id,
-                                        name: `${product.name} (${variant.label})`,
-                                      })
-                                    }
-                                    className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                                  >
-                                    Delete
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
+                                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                                    >
+                                      Delete
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </section>
       </main>
