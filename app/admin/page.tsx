@@ -18,10 +18,10 @@ type PendingDelete =
   | { type: "variant"; id: string; name: string };
 
 export default function AdminPage() {
-  const { sections, addSection, updateSection, deleteSection } = useSections();
-  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
-  const { variants, addVariant, updateVariant, deleteVariant } = useVariants();
-  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
+  const { sections, addSection, updateSection, deleteSection, isLoading: sectionsLoading } = useSections();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading: productsLoading } = useProducts();
+  const { variants, addVariant, updateVariant, deleteVariant, isLoading: variantsLoading } = useVariants();
+  const { brands, addBrand, updateBrand, deleteBrand, isLoading: brandsLoading } = useBrands();
   const { showToast } = useToast();
 
   const [newBrandName, setNewBrandName] = useState("");
@@ -194,119 +194,149 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="h-screen overflow-y-auto bg-kiosk-lighter">
-      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100">
+      <header className="border-b border-slate-200 bg-white px-4 py-6 lg:px-8 lg:py-8 shadow-sm">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-4xl font-bold text-kiosk-primary">Admin</h1>
-            <p className="mt-1 text-xs lg:text-sm font-medium text-gray-600 uppercase tracking-wide">Manage categories, products, and variants</p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-slate-900">Admin Dashboard</h1>
+            <p className="mt-2 text-sm font-medium text-slate-500 uppercase tracking-wide">Manage your menu items and operations</p>
           </div>
           <Link
             href="/"
-            className="rounded-[14px] lg:rounded-[16px] bg-kiosk-muted px-4 py-2.5 lg:px-6 lg:py-4 text-sm lg:text-lg font-bold text-kiosk-primary smooth-transition tap-scale hover:bg-kiosk-accent hover:text-white"
+            className="rounded-lg bg-slate-100 px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold text-slate-700 smooth-transition tap-scale hover:bg-slate-200 flex items-center gap-2"
           >
             ← Back to Kiosk
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:gap-8 lg:px-8 lg:py-10 lg:grid-cols-2">
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Category</h2>
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:gap-8 lg:px-8 lg:py-12 lg:grid-cols-3">
+        {(sectionsLoading || productsLoading || variantsLoading || brandsLoading) ? (
+          <div className="lg:col-span-3 flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
+            <p className="text-slate-600 font-medium">Loading menu data...</p>
+          </div>
+        ) : (
+          <>
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Category</h2>
+          </div>
           <form onSubmit={handleAddSection} className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category name</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Category Name</span>
               <input
                 value={newSectionName}
                 onChange={(event) => setNewSectionName(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="e.g. Snacks"
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
+                placeholder="e.g. Beverages, Snacks"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Icon (optional)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Icon (Optional)</span>
               <input
                 value={newSectionIcon}
                 onChange={(event) => setNewSectionIcon(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="e.g. 🍿"
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
+                placeholder="e.g. 🍿 or 🥤"
               />
             </label>
             <button
               type="submit"
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
+              className="w-full rounded-lg bg-blue-600 py-3 text-base font-semibold text-white smooth-transition tap-scale hover:bg-blue-700"
             >
               Add Category
             </button>
           </form>
         </section>
 
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Product</h2>
-          <p className="mb-4 -mt-2 text-xs text-gray-500">
-            Each product starts with one variant + photo. Add more variants later from "Add Variant to Existing Product" below.
-          </p>
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Product</h2>
+              <p className="text-xs text-slate-500 mt-1">Starts with one variant. Add more variants below.</p>
+            </div>
+          </div>
           <form onSubmit={handleAddProduct} className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
+                <select
+                  value={productSectionId}
+                  onChange={(event) => setProductSectionId(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                >
+                  <option value="">Select category</option>
+                  {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Brand</span>
+                <select
+                  value={productBrandId}
+                  onChange={(event) => setProductBrandId(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                >
+                  <option value="">No brand</option>
+                  {brands.sort((a, b) => a.name.localeCompare(b.name)).map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
-              <select
-                value={productSectionId}
-                onChange={(event) => setProductSectionId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">Select category</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product name</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Product Name *</span>
               <input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
                 placeholder="e.g. Nescafe Creamy White"
               />
             </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Brand</span>
-              <select
-                value={productBrandId}
-                onChange={(event) => setProductBrandId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">No brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={productVariantLabel}
-                onChange={(event) => setProductVariantLabel(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Label (e.g. Single)"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={productVariantPrice}
-                onChange={(event) => setProductVariantPrice(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Price"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Label *</span>
+                <input
+                  value={productVariantLabel}
+                  onChange={(event) => setProductVariantLabel(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                  placeholder="e.g. Single"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Price *</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={productVariantPrice}
+                  onChange={(event) => setProductVariantPrice(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                  placeholder="0.00"
+                />
+              </label>
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Image (Optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -315,13 +345,13 @@ export default function AdminPage() {
                   setProductImageFile(file);
                   setProductImagePreview(file ? URL.createObjectURL(file) : null);
                 }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
               />
               {productImagePreview && (
                 <img
                   src={productImagePreview}
                   alt="Preview"
-                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
+                  className="mt-3 h-24 w-24 rounded-lg object-cover border border-slate-200"
                 />
               )}
             </label>
@@ -329,69 +359,86 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={isUploadingImage}
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
+              className="w-full rounded-lg bg-green-600 py-3 text-base font-semibold text-white smooth-transition tap-scale disabled:opacity-50 hover:bg-green-700"
             >
-              {isUploadingImage ? "Uploading image..." : "Save Product"}
+              {isUploadingImage ? "Uploading..." : "Save Product"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add Variant to Existing Product</h2>
-          <form onSubmit={handleAddExistingVariant} className="space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
-              <select
-                value={existingSectionId}
-                onChange={(event) => {
-                  setExistingSectionId(event.target.value);
-                  setExistingProductId("");
-                }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">Select category</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product</span>
-              <select
-                value={existingProductId}
-                onChange={(event) => setExistingProductId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                disabled={!existingSectionId}
-              >
-                <option value="">Select product</option>
-                {productsInSection.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={existingVariantLabel}
-                onChange={(event) => setExistingVariantLabel(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Variant label"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={existingVariantPrice}
-                onChange={(event) => setExistingVariantPrice(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Price"
-              />
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
             </div>
+            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Variant</h2>
+          </div>
+          <form onSubmit={handleAddExistingVariant} className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
+                <select
+                  value={existingSectionId}
+                  onChange={(event) => {
+                    setExistingSectionId(event.target.value);
+                    setExistingProductId("");
+                  }}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+                >
+                  <option value="">Select category</option>
+                  {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Product *</span>
+                <select
+                  value={existingProductId}
+                  onChange={(event) => setExistingProductId(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition disabled:bg-slate-50 disabled:text-slate-500"
+                  disabled={!existingSectionId}
+                >
+                  <option value="">Select product</option>
+                  {productsInSection.sort((a, b) => a.name.localeCompare(b.name)).map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Label *</span>
+                <input
+                  value={existingVariantLabel}
+                  onChange={(event) => setExistingVariantLabel(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+                  placeholder="e.g. Medium"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Price *</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={existingVariantPrice}
+                  onChange={(event) => setExistingVariantPrice(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+                  placeholder="0.00"
+                />
+              </label>
+            </div>
+            
             <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Image (Optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -400,39 +447,47 @@ export default function AdminPage() {
                   setExistingVariantImageFile(file);
                   setExistingVariantImagePreview(file ? URL.createObjectURL(file) : null);
                 }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
               />
               {existingVariantImagePreview && (
                 <img
                   src={existingVariantImagePreview}
                   alt="Preview"
-                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
+                  className="mt-3 h-24 w-24 rounded-lg object-cover border border-slate-200"
                 />
               )}
             </label>
+            
             <button
               type="submit"
               disabled={isUploadingExistingImage}
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
+              className="w-full rounded-lg bg-purple-600 py-3 text-base font-semibold text-white smooth-transition tap-scale disabled:opacity-50 hover:bg-purple-700"
             >
-              {isUploadingExistingImage ? "Uploading image..." : "Add Variant"}
+              {isUploadingExistingImage ? "Uploading..." : "Add Variant"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Brands</h2>
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Brands</h2>
+          </div>
 
-          <form onSubmit={handleAddBrand} className="mb-6 flex gap-3">
+          <form onSubmit={handleAddBrand} className="mb-6 flex flex-col sm:flex-row gap-3">
             <input
               value={newBrandName}
               onChange={(event) => setNewBrandName(event.target.value)}
-              className="flex-1 rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
+              className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
               placeholder="e.g. Nescafe"
             />
             <button
               type="submit"
-              className="rounded-[14px] bg-kiosk-primary px-6 py-3 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
+              className="rounded-lg bg-orange-600 px-6 py-2.5 text-base font-semibold text-white smooth-transition tap-scale hover:bg-orange-700 whitespace-nowrap"
             >
               Add Brand
             </button>
@@ -440,7 +495,7 @@ export default function AdminPage() {
 
           <div className="relative mb-6">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -452,29 +507,31 @@ export default function AdminPage() {
               value={brandSearchQuery}
               onChange={(event) => setBrandSearchQuery(event.target.value)}
               placeholder="Search brands..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
             />
           </div>
 
           {(() => {
-            const filteredBrands = brands.filter((brand) =>
-              brand.name.toLowerCase().includes(brandSearchQuery.toLowerCase()),
-            );
+            const filteredBrands = brands
+              .filter((brand) =>
+                brand.name.toLowerCase().includes(brandSearchQuery.toLowerCase()),
+              )
+              .sort((a, b) => a.name.localeCompare(b.name));
 
             if (brands.length === 0) {
-              return <p className="text-gray-500">No brands yet.</p>;
+              return <p className="text-slate-500 py-6 text-center">No brands yet.</p>;
             }
 
             if (filteredBrands.length === 0) {
-              return <p className="text-gray-500">No brands match your search.</p>;
+              return <p className="text-slate-500 py-6 text-center">No brands match your search.</p>;
             }
 
             return (
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="space-y-2">
                 {filteredBrands.map((brand) => (
                   <li
                     key={brand.id}
-                    className="flex items-center gap-2 rounded-xl border border-kiosk-muted bg-kiosk-lighter px-4 py-2"
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100 smooth-transition"
                   >
                     <input
                       defaultValue={brand.name}
@@ -483,19 +540,21 @@ export default function AdminPage() {
                         if (name && name !== brand.name) {
                           try {
                             await updateBrand(brand.id, name);
+                            showToast("Brand updated");
                           } catch (error) {
                             console.error("Failed to update brand:", error);
+                            showToast("Failed to update brand");
                           }
                         }
                       }}
-                      className="rounded-lg border border-white bg-white px-3 py-2 font-semibold outline-none focus:border-kiosk-accent"
+                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                     <button
                       type="button"
                       onClick={() => setPendingDelete({ type: "brand", id: brand.id, name: brand.name })}
-                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                      className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                     >
-                      ✕
+                      Delete
                     </button>
                   </li>
                 ))}
@@ -504,12 +563,19 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Categories</h2>
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-pink-100 rounded-lg">
+              <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Categories</h2>
+          </div>
 
           <div className="relative mb-6">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -521,29 +587,31 @@ export default function AdminPage() {
               value={categorySearchQuery}
               onChange={(event) => setCategorySearchQuery(event.target.value)}
               placeholder="Search categories..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent smooth-transition"
             />
           </div>
 
           {(() => {
-            const filteredCategories = sections.filter((section) =>
-              section.name.toLowerCase().includes(categorySearchQuery.toLowerCase()),
-            );
+            const filteredCategories = sections
+              .filter((section) =>
+                section.name.toLowerCase().includes(categorySearchQuery.toLowerCase()),
+              )
+              .sort((a, b) => a.name.localeCompare(b.name));
 
             if (sections.length === 0) {
-              return <p className="text-gray-500">No categories yet.</p>;
+              return <p className="text-slate-500 py-6 text-center">No categories yet.</p>;
             }
 
             if (filteredCategories.length === 0) {
-              return <p className="text-gray-500">No categories match your search.</p>;
+              return <p className="text-slate-500 py-6 text-center">No categories match your search.</p>;
             }
 
             return (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {filteredCategories.map((section) => (
                   <li
                     key={section.id}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-kiosk-muted bg-kiosk-lighter px-4 py-3"
+                    className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100 smooth-transition"
                   >
                     <input
                       defaultValue={section.icon ?? ""}
@@ -552,12 +620,14 @@ export default function AdminPage() {
                         if (icon !== (section.icon ?? "")) {
                           try {
                             await updateSection(section.id, { icon: icon || undefined });
+                            showToast("Category updated");
                           } catch (error) {
                             console.error("Failed to update category:", error);
+                            showToast("Failed to update category");
                           }
                         }
                       }}
-                      className="w-16 rounded-lg border border-white bg-white px-3 py-2 text-center text-xl outline-none focus:border-kiosk-accent"
+                      className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-lg outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="Icon"
                     />
                     <input
@@ -567,20 +637,22 @@ export default function AdminPage() {
                         if (name && name !== section.name) {
                           try {
                             await updateSection(section.id, { name });
+                            showToast("Category updated");
                           } catch (error) {
                             console.error("Failed to update category:", error);
+                            showToast("Failed to update category");
                           }
                         }
                       }}
-                      className="flex-1 rounded-lg border border-white bg-white px-3 py-2 font-semibold outline-none focus:border-kiosk-accent"
+                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     />
-                    <span className="text-sm text-gray-500">
-                      {products.filter((p) => p.section_id === section.id).length} products
+                    <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2.5 py-1 rounded whitespace-nowrap">
+                      {products.filter((p) => p.section_id === section.id).length} items
                     </span>
                     <button
                       type="button"
                       onClick={() => setPendingDelete({ type: "section", id: section.id, name: section.name })}
-                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                      className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
                     >
                       Delete
                     </button>
@@ -591,12 +663,19 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Products</h2>
+        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-cyan-100 rounded-lg">
+              <svg className="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m0 0l8 4m-8-4v10l8 4m0-10l8 4m-8-4v10M8 7l8 4" />
+              </svg>
+            </div>
+            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Products</h2>
+          </div>
 
           <div className="relative mb-6">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -608,43 +687,46 @@ export default function AdminPage() {
               value={manageSearchQuery}
               onChange={(event) => setManageSearchQuery(event.target.value)}
               placeholder="Search products..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent smooth-transition"
             />
           </div>
 
-          <div className="space-y-8">
-            {sections.map((section) => {
-              const sectionProducts = products.filter(
-                (product) =>
-                  product.section_id === section.id &&
-                  product.name.toLowerCase().includes(manageSearchQuery.toLowerCase()),
-              );
+          <div className="space-y-6">
+            {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => {
+              const sectionProducts = products
+                .filter(
+                  (product) =>
+                    product.section_id === section.id &&
+                    product.name.toLowerCase().includes(manageSearchQuery.toLowerCase()),
+                )
+                .sort((a, b) => a.name.localeCompare(b.name));
 
               if (manageSearchQuery && sectionProducts.length === 0) return null;
 
               return (
-                <div key={section.id} className="rounded-2xl border border-kiosk-muted bg-kiosk-lighter p-5">
+                <div key={section.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <h3 className="flex-1 text-xl font-bold text-kiosk-primary">
-                      {section.icon ?? "📦"} {section.name}
+                    <h3 className="flex-1 text-lg font-bold text-slate-900">
+                      <span className="text-xl mr-2">{section.icon ?? "📦"}</span>
+                      {section.name}
                     </h3>
                   </div>
 
                   {sectionProducts.length === 0 ? (
-                    <p className="text-gray-500">No products in this category.</p>
+                    <p className="text-slate-500 text-sm">No products in this category.</p>
                   ) : (
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                       {sectionProducts.map((product) => {
-                        const productVariants = variants.filter(
-                          (variant) => variant.product_id === product.id,
-                        );
+                        const productVariants = variants
+                          .filter((variant) => variant.product_id === product.id)
+                          .sort((a, b) => a.label.localeCompare(b.label));
 
                         return (
                           <li
                             key={product.id}
-                            className="rounded-2xl border border-kiosk-muted bg-white p-4"
+                            className="rounded-lg border border-slate-200 bg-white p-4"
                           >
-                            <div className="mb-3 flex flex-wrap items-center gap-3">
+                            <div className="mb-4 flex flex-wrap items-center gap-3">
                               <input
                                 defaultValue={product.name}
                                 onBlur={async (event) => {
@@ -652,12 +734,14 @@ export default function AdminPage() {
                                   if (name && name !== product.name) {
                                     try {
                                       await updateProduct(product.id, { name });
+                                      showToast("Product updated");
                                     } catch (error) {
                                       console.error("Failed to update product:", error);
+                                      showToast("Failed to update product");
                                     }
                                   }
                                 }}
-                                className="flex-1 rounded-xl border-2 border-kiosk-muted px-4 py-2 text-lg font-semibold outline-none focus:border-kiosk-accent"
+                                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                               />
                               <select
                                 defaultValue={product.brand_id ?? ""}
@@ -665,14 +749,16 @@ export default function AdminPage() {
                                   const brandId = event.target.value || null;
                                   try {
                                     await updateProduct(product.id, { brand_id: brandId });
+                                    showToast("Brand updated");
                                   } catch (error) {
                                     console.error("Failed to update product brand:", error);
+                                    showToast("Failed to update brand");
                                   }
                                 }}
-                                className="rounded-xl border-2 border-kiosk-muted px-3 py-2 outline-none focus:border-kiosk-accent"
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                               >
                                 <option value="">No brand</option>
-                                {brands.map((brand) => (
+                                {brands.sort((a, b) => a.name.localeCompare(b.name)).map((brand) => (
                                   <option key={brand.id} value={brand.id}>
                                     {brand.name}
                                   </option>
@@ -683,86 +769,90 @@ export default function AdminPage() {
                                 onClick={() =>
                                   setPendingDelete({ type: "product", id: product.id, name: product.name })
                                 }
-                                className="rounded-xl bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                                className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200 text-sm"
                               >
-                                Delete Product
+                                Delete
                               </button>
                             </div>
 
-                            <ul className="space-y-2">
-                              {productVariants.map((variant) => (
-                                <li
-                                  key={variant.id}
-                                  className="flex flex-wrap items-center gap-3 rounded-xl bg-kiosk-lighter p-3"
-                                >
-                                  {variant.image_url && (
-                                    <img
-                                      src={variant.image_url}
-                                      alt={variant.label}
-                                      className="h-12 w-12 rounded-lg object-cover border border-kiosk-muted"
-                                    />
-                                  )}
-                                  <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-3 py-2 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
-                                    {variant.image_url ? "Change" : "Add Photo"}
+                            <ul className="space-y-2 bg-slate-50 rounded-lg p-3">
+                              {productVariants.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No variants</p>
+                              ) : (
+                                productVariants.map((variant) => (
+                                  <li
+                                    key={variant.id}
+                                    className="flex flex-wrap items-center gap-2 rounded-lg bg-white p-3 border border-slate-200"
+                                  >
+                                    {variant.image_url && (
+                                      <img
+                                        src={variant.image_url}
+                                        alt={variant.label}
+                                        className="h-10 w-10 rounded-lg object-cover border border-slate-200"
+                                      />
+                                    )}
+                                    <label className="cursor-pointer rounded-lg bg-slate-100 border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition">
+                                      {variant.image_url ? "Change" : "Add Photo"}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (event) => {
+                                          const file = event.target.files?.[0];
+                                          if (!file) return;
+                                          try {
+                                            const imageUrl = await uploadProductImage(file);
+                                            await updateVariant(variant.id, { image_url: imageUrl });
+                                            showToast("Image updated");
+                                          } catch (error) {
+                                            console.error("Failed to upload image:", error);
+                                            showToast("Failed to upload image");
+                                          }
+                                        }}
+                                      />
+                                    </label>
                                     <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={async (event) => {
-                                        const file = event.target.files?.[0];
-                                        if (!file) return;
-                                        try {
-                                          const imageUrl = await uploadProductImage(file);
-                                          await updateVariant(variant.id, { image_url: imageUrl });
-                                          showToast("Image updated");
-                                        } catch (error) {
-                                          console.error("Failed to upload image:", error);
-                                          showToast("Failed to upload image");
+                                      defaultValue={variant.label}
+                                      onBlur={(event) => {
+                                        const label = event.target.value.trim();
+                                        if (label && label !== variant.label) {
+                                          updateVariant(variant.id, { label });
                                         }
                                       }}
+                                      className="flex-1 min-w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                                     />
-                                  </label>
-                                  <input
-                                    defaultValue={variant.label}
-                                    onBlur={(event) => {
-                                      const label = event.target.value.trim();
-                                      if (label && label !== variant.label) {
-                                        updateVariant(variant.id, { label });
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      defaultValue={variant.price}
+                                      onBlur={(event) => {
+                                        const price = Number(event.target.value);
+                                        if (!Number.isNaN(price) && price !== variant.price) {
+                                          updateVariant(variant.id, { price });
+                                        }
+                                      }}
+                                      className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                    />
+                                    <span className="font-semibold text-slate-900 whitespace-nowrap text-sm">
+                                      {formatCurrency(variant.price)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPendingDelete({
+                                          type: "variant",
+                                          id: variant.id,
+                                          name: `${product.name} (${variant.label})`,
+                                        })
                                       }
-                                    }}
-                                    className="flex-1 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                  />
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    defaultValue={variant.price}
-                                    onBlur={(event) => {
-                                      const price = Number(event.target.value);
-                                      if (!Number.isNaN(price) && price !== variant.price) {
-                                        updateVariant(variant.id, { price });
-                                      }
-                                    }}
-                                    className="w-28 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                  />
-                                  <span className="font-semibold text-black">
-                                    {formatCurrency(variant.price)}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setPendingDelete({
-                                        type: "variant",
-                                        id: variant.id,
-                                        name: `${product.name} (${variant.label})`,
-                                      })
-                                    }
-                                    className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                                  >
-                                    Delete
-                                  </button>
-                                </li>
-                              ))}
+                                      className="rounded-lg bg-red-100 px-2 py-1.5 font-semibold text-red-600 transition hover:bg-red-200 text-xs"
+                                    >
+                                      Delete
+                                    </button>
+                                  </li>
+                                ))
+                              )}
                             </ul>
                           </li>
                         );
@@ -774,6 +864,8 @@ export default function AdminPage() {
             })}
           </div>
         </section>
+          </>
+        )}
       </main>
 
       <ConfirmDialog
