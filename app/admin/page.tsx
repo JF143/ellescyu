@@ -18,10 +18,10 @@ type PendingDelete =
   | { type: "variant"; id: string; name: string };
 
 export default function AdminPage() {
-  const { sections, addSection, updateSection, deleteSection } = useSections();
-  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
-  const { variants, addVariant, updateVariant, deleteVariant } = useVariants();
-  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
+  const { sections, addSection, updateSection, deleteSection, isLoading: sectionsLoading } = useSections();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading: productsLoading } = useProducts();
+  const { variants, addVariant, updateVariant, deleteVariant, isLoading: variantsLoading } = useVariants();
+  const { brands, addBrand, updateBrand, deleteBrand, isLoading: brandsLoading } = useBrands();
   const { showToast } = useToast();
 
   const [newBrandName, setNewBrandName] = useState("");
@@ -211,6 +211,13 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:gap-8 lg:px-8 lg:py-12 lg:grid-cols-3">
+        {(sectionsLoading || productsLoading || variantsLoading || brandsLoading) ? (
+          <div className="lg:col-span-3 flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
+            <p className="text-slate-600 font-medium">Loading menu data...</p>
+          </div>
+        ) : (
+          <>
         <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -857,6 +864,8 @@ export default function AdminPage() {
             })}
           </div>
         </section>
+          </>
+        )}
       </main>
 
       <ConfirmDialog
