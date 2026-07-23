@@ -18,10 +18,10 @@ type PendingDelete =
   | { type: "variant"; id: string; name: string };
 
 export default function AdminPage() {
-  const { sections, addSection, updateSection, deleteSection, isLoading: sectionsLoading } = useSections();
-  const { products, addProduct, updateProduct, deleteProduct, isLoading: productsLoading } = useProducts();
-  const { variants, addVariant, updateVariant, deleteVariant, isLoading: variantsLoading } = useVariants();
-  const { brands, addBrand, updateBrand, deleteBrand, isLoading: brandsLoading } = useBrands();
+  const { sections, addSection, updateSection, deleteSection } = useSections();
+  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { variants, addVariant, updateVariant, deleteVariant } = useVariants();
+  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
 
   const [newBrandName, setNewBrandName] = useState("");
@@ -194,38 +194,35 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="border-b border-slate-200 bg-white px-4 py-6 lg:px-8 lg:py-8 shadow-sm">
+    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-6 lg:px-8 lg:py-8 shadow-sm">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-slate-900">Admin Dashboard</h1>
-            <p className="mt-2 text-sm font-medium text-slate-500 uppercase tracking-wide">Manage your menu items and operations</p>
+            <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Admin Dashboard</h1>
+            <p className="mt-2 text-sm font-medium text-slate-500 uppercase tracking-wider">Menu Management System</p>
           </div>
           <Link
             href="/"
-            className="rounded-lg bg-slate-100 px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-semibold text-slate-700 smooth-transition tap-scale hover:bg-slate-200 flex items-center gap-2"
+            className="rounded-lg bg-slate-100 hover:bg-slate-200 px-5 py-2.5 lg:px-7 lg:py-3 text-sm lg:text-base font-semibold text-slate-700 smooth-transition tap-scale hover:shadow-md flex items-center gap-2 border border-slate-200"
           >
-            ← Back to Kiosk
+            <span>←</span> Back to Kiosk
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:gap-8 lg:px-8 lg:py-12 lg:grid-cols-3">
-        {(sectionsLoading || productsLoading || variantsLoading || brandsLoading) ? (
-          <div className="lg:col-span-3 flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
-            <p className="text-slate-600 font-medium">Loading menu data...</p>
-          </div>
-        ) : (
-          <>
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200">
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:gap-8 lg:px-8 lg:py-12 lg:grid-cols-2">
+        {/* Add Category Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
+            <div className="p-3 bg-blue-100 rounded-lg">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Category</h2>
+            <div>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Add Category</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Create a new menu category</p>
+            </div>
           </div>
           <form onSubmit={handleAddSection} className="space-y-4">
             <label className="block">
@@ -233,8 +230,8 @@ export default function AdminPage() {
               <input
                 value={newSectionName}
                 onChange={(event) => setNewSectionName(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
-                placeholder="e.g. Beverages, Snacks"
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
+                placeholder="e.g. Beverages"
               />
             </label>
             <label className="block">
@@ -242,82 +239,80 @@ export default function AdminPage() {
               <input
                 value={newSectionIcon}
                 onChange={(event) => setNewSectionIcon(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent smooth-transition"
                 placeholder="e.g. 🍿 or 🥤"
               />
             </label>
             <button
               type="submit"
-              className="w-full rounded-lg bg-blue-600 py-3 text-base font-semibold text-white smooth-transition tap-scale hover:bg-blue-700"
+              className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 py-3 text-base font-semibold text-white smooth-transition tap-scale shadow-sm hover:shadow-md"
             >
               Add Category
             </button>
           </form>
         </section>
 
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-2">
+        {/* Add Product Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-green-100 rounded-lg">
+            <div className="p-3 bg-green-100 rounded-lg">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Product</h2>
-              <p className="text-xs text-slate-500 mt-1">Starts with one variant. Add more variants below.</p>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Add Product</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Create with one variant, add more later</p>
             </div>
           </div>
           <form onSubmit={handleAddProduct} className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
-                <select
-                  value={productSectionId}
-                  onChange={(event) => setProductSectionId(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
-                >
-                  <option value="">Select category</option>
-                  {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Brand</span>
-                <select
-                  value={productBrandId}
-                  onChange={(event) => setProductBrandId(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
-                >
-                  <option value="">No brand</option>
-                  {brands.sort((a, b) => a.name.localeCompare(b.name)).map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
+              <select
+                value={productSectionId}
+                onChange={(event) => setProductSectionId(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+              >
+                <option value="">Select category</option>
+                {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">Product Name *</span>
               <input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
                 placeholder="e.g. Nescafe Creamy White"
               />
             </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Brand (Optional)</span>
+              <select
+                value={productBrandId}
+                onChange={(event) => setProductBrandId(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+              >
+                <option value="">No brand</option>
+                {brands.sort((a, b) => a.name.localeCompare(b.name)).map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Label *</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Label *</span>
                 <input
                   value={productVariantLabel}
                   onChange={(event) => setProductVariantLabel(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
                   placeholder="e.g. Single"
                 />
               </label>
@@ -329,14 +324,14 @@ export default function AdminPage() {
                   step="0.01"
                   value={productVariantPrice}
                   onChange={(event) => setProductVariantPrice(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent smooth-transition"
                   placeholder="0.00"
                 />
               </label>
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Image (Optional)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Image (Optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -359,67 +354,68 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={isUploadingImage}
-              className="w-full rounded-lg bg-green-600 py-3 text-base font-semibold text-white smooth-transition tap-scale disabled:opacity-50 hover:bg-green-700"
+              className="w-full rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 py-3 text-base font-semibold text-white smooth-transition tap-scale shadow-sm hover:shadow-md"
             >
               {isUploadingImage ? "Uploading..." : "Save Product"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-2">
+        {/* Add Variant Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-purple-100 rounded-lg">
+            <div className="p-3 bg-purple-100 rounded-lg">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Add Variant</h2>
+            <div>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Add Variant</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Add variant to existing product</p>
+            </div>
           </div>
           <form onSubmit={handleAddExistingVariant} className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
+              <select
+                value={existingSectionId}
+                onChange={(event) => {
+                  setExistingSectionId(event.target.value);
+                  setExistingProductId("");
+                }}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+              >
+                <option value="">Select category</option>
+                {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Product *</span>
+              <select
+                value={existingProductId}
+                onChange={(event) => setExistingProductId(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition disabled:opacity-50 disabled:bg-slate-100"
+                disabled={!existingSectionId}
+              >
+                <option value="">Select product</option>
+                {productsInSection.sort((a, b) => a.name.localeCompare(b.name)).map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Category *</span>
-                <select
-                  value={existingSectionId}
-                  onChange={(event) => {
-                    setExistingSectionId(event.target.value);
-                    setExistingProductId("");
-                  }}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
-                >
-                  <option value="">Select category</option>
-                  {sections.sort((a, b) => a.name.localeCompare(b.name)).map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Product *</span>
-                <select
-                  value={existingProductId}
-                  onChange={(event) => setExistingProductId(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition disabled:bg-slate-50 disabled:text-slate-500"
-                  disabled={!existingSectionId}
-                >
-                  <option value="">Select product</option>
-                  {productsInSection.sort((a, b) => a.name.localeCompare(b.name)).map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Label *</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Label *</span>
                 <input
                   value={existingVariantLabel}
                   onChange={(event) => setExistingVariantLabel(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
                   placeholder="e.g. Medium"
                 />
               </label>
@@ -431,14 +427,13 @@ export default function AdminPage() {
                   step="0.01"
                   value={existingVariantPrice}
                   onChange={(event) => setExistingVariantPrice(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent smooth-transition"
                   placeholder="0.00"
                 />
               </label>
             </div>
-            
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">Variant Image (Optional)</span>
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Image (Optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -457,37 +452,40 @@ export default function AdminPage() {
                 />
               )}
             </label>
-            
             <button
               type="submit"
               disabled={isUploadingExistingImage}
-              className="w-full rounded-lg bg-purple-600 py-3 text-base font-semibold text-white smooth-transition tap-scale disabled:opacity-50 hover:bg-purple-700"
+              className="w-full rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 py-3 text-base font-semibold text-white smooth-transition tap-scale shadow-sm hover:shadow-md"
             >
               {isUploadingExistingImage ? "Uploading..." : "Add Variant"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+        {/* Manage Brands Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition lg:col-span-2">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-orange-100 rounded-lg">
+            <div className="p-3 bg-orange-100 rounded-lg">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Brands</h2>
+            <div>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Manage Brands</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Organize and manage brand names</p>
+            </div>
           </div>
 
           <form onSubmit={handleAddBrand} className="mb-6 flex flex-col sm:flex-row gap-3">
             <input
               value={newBrandName}
               onChange={(event) => setNewBrandName(event.target.value)}
-              className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
+              className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
               placeholder="e.g. Nescafe"
             />
             <button
               type="submit"
-              className="rounded-lg bg-orange-600 px-6 py-2.5 text-base font-semibold text-white smooth-transition tap-scale hover:bg-orange-700 whitespace-nowrap"
+              className="rounded-lg bg-orange-600 hover:bg-orange-700 px-6 py-2.5 text-base font-semibold text-white smooth-transition tap-scale shadow-sm hover:shadow-md whitespace-nowrap"
             >
               Add Brand
             </button>
@@ -507,7 +505,7 @@ export default function AdminPage() {
               value={brandSearchQuery}
               onChange={(event) => setBrandSearchQuery(event.target.value)}
               placeholder="Search brands..."
-              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
+              className="w-full rounded-lg border border-slate-300 bg-slate-50 pl-11 pr-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent smooth-transition"
             />
           </div>
 
@@ -531,7 +529,7 @@ export default function AdminPage() {
                 {filteredBrands.map((brand) => (
                   <li
                     key={brand.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100 smooth-transition"
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100 smooth-transition group"
                   >
                     <input
                       defaultValue={brand.name}
@@ -552,7 +550,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => setPendingDelete({ type: "brand", id: brand.id, name: brand.name })}
-                      className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                      className="rounded-lg bg-red-100 hover:bg-red-200 px-4 py-2 font-semibold text-red-600 transition smooth-transition text-sm"
                     >
                       Delete
                     </button>
@@ -563,14 +561,18 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+        {/* Manage Categories Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition lg:col-span-2">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-pink-100 rounded-lg">
+            <div className="p-3 bg-pink-100 rounded-lg">
               <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </div>
-            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Categories</h2>
+            <div>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Manage Categories</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Edit or delete menu categories</p>
+            </div>
           </div>
 
           <div className="relative mb-6">
@@ -587,7 +589,7 @@ export default function AdminPage() {
               value={categorySearchQuery}
               onChange={(event) => setCategorySearchQuery(event.target.value)}
               placeholder="Search categories..."
-              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent smooth-transition"
+              className="w-full rounded-lg border border-slate-300 bg-slate-50 pl-11 pr-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-pink-500 focus:border-transparent smooth-transition"
             />
           </div>
 
@@ -628,7 +630,7 @@ export default function AdminPage() {
                         }
                       }}
                       className="w-16 rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-lg outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="Icon"
+                      placeholder="🍕"
                     />
                     <input
                       defaultValue={section.name}
@@ -652,7 +654,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => setPendingDelete({ type: "section", id: section.id, name: section.name })}
-                      className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
+                      className="rounded-lg bg-red-100 hover:bg-red-200 px-4 py-2 font-semibold text-red-600 transition smooth-transition text-sm"
                     >
                       Delete
                     </button>
@@ -663,14 +665,18 @@ export default function AdminPage() {
           })()}
         </section>
 
-        <section className="rounded-lg bg-white p-6 lg:p-8 shadow-sm border border-slate-200 lg:col-span-3">
+        {/* Manage Products Section */}
+        <section className="rounded-xl bg-white p-6 lg:p-8 shadow-sm border border-slate-200 hover:shadow-md smooth-transition lg:col-span-2">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-cyan-100 rounded-lg">
+            <div className="p-3 bg-cyan-100 rounded-lg">
               <svg className="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m0 0l8 4m-8-4v10l8 4m0-10l8 4m-8-4v10M8 7l8 4" />
               </svg>
             </div>
-            <h2 className="text-xl lg:text-2xl font-bold text-slate-900">Manage Products</h2>
+            <div>
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900">Manage Products</h2>
+              <p className="text-xs text-slate-500 mt-0.5">View, edit, or delete all products and variants</p>
+            </div>
           </div>
 
           <div className="relative mb-6">
@@ -687,7 +693,7 @@ export default function AdminPage() {
               value={manageSearchQuery}
               onChange={(event) => setManageSearchQuery(event.target.value)}
               placeholder="Search products..."
-              className="w-full rounded-lg border border-slate-300 pl-11 pr-4 py-2.5 text-base outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent smooth-transition"
+              className="w-full rounded-lg border border-slate-300 bg-slate-50 pl-11 pr-4 py-2.5 text-base outline-none focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent smooth-transition"
             />
           </div>
 
@@ -706,7 +712,7 @@ export default function AdminPage() {
               return (
                 <div key={section.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <h3 className="flex-1 text-lg font-bold text-slate-900">
+                    <h3 className="flex-1 text-base lg:text-lg font-bold text-slate-900">
                       <span className="text-xl mr-2">{section.icon ?? "📦"}</span>
                       {section.name}
                     </h3>
@@ -726,7 +732,7 @@ export default function AdminPage() {
                             key={product.id}
                             className="rounded-lg border border-slate-200 bg-white p-4"
                           >
-                            <div className="mb-4 flex flex-wrap items-center gap-3">
+                            <div className="mb-3 flex flex-wrap items-center gap-3">
                               <input
                                 defaultValue={product.name}
                                 onBlur={async (event) => {
@@ -741,7 +747,7 @@ export default function AdminPage() {
                                     }
                                   }
                                 }}
-                                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-base font-semibold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                               />
                               <select
                                 defaultValue={product.brand_id ?? ""}
@@ -755,7 +761,7 @@ export default function AdminPage() {
                                     showToast("Failed to update brand");
                                   }
                                 }}
-                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                               >
                                 <option value="">No brand</option>
                                 {brands.sort((a, b) => a.name.localeCompare(b.name)).map((brand) => (
@@ -769,13 +775,13 @@ export default function AdminPage() {
                                 onClick={() =>
                                   setPendingDelete({ type: "product", id: product.id, name: product.name })
                                 }
-                                className="rounded-lg bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200 text-sm"
+                                className="rounded-lg bg-red-100 hover:bg-red-200 px-4 py-2 font-semibold text-red-600 transition smooth-transition text-sm"
                               >
                                 Delete
                               </button>
                             </div>
 
-                            <ul className="space-y-2 bg-slate-50 rounded-lg p-3">
+                            <ul className="space-y-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
                               {productVariants.length === 0 ? (
                                 <p className="text-slate-400 text-sm">No variants</p>
                               ) : (
@@ -791,7 +797,7 @@ export default function AdminPage() {
                                         className="h-10 w-10 rounded-lg object-cover border border-slate-200"
                                       />
                                     )}
-                                    <label className="cursor-pointer rounded-lg bg-slate-100 border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition">
+                                    <label className="cursor-pointer rounded-lg bg-slate-100 border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition smooth-transition">
                                       {variant.image_url ? "Change" : "Add Photo"}
                                       <input
                                         type="file"
@@ -819,7 +825,7 @@ export default function AdminPage() {
                                           updateVariant(variant.id, { label });
                                         }
                                       }}
-                                      className="flex-1 min-w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                      className="flex-1 min-w-24 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                                     />
                                     <input
                                       type="number"
@@ -832,7 +838,7 @@ export default function AdminPage() {
                                           updateVariant(variant.id, { price });
                                         }
                                       }}
-                                      className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                      className="w-20 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                                     />
                                     <span className="font-semibold text-slate-900 whitespace-nowrap text-sm">
                                       {formatCurrency(variant.price)}
@@ -846,7 +852,7 @@ export default function AdminPage() {
                                           name: `${product.name} (${variant.label})`,
                                         })
                                       }
-                                      className="rounded-lg bg-red-100 px-2 py-1.5 font-semibold text-red-600 transition hover:bg-red-200 text-xs"
+                                      className="rounded-lg bg-red-100 hover:bg-red-200 px-2 py-1.5 font-semibold text-red-600 transition smooth-transition text-xs"
                                     >
                                       Delete
                                     </button>
@@ -864,24 +870,15 @@ export default function AdminPage() {
             })}
           </div>
         </section>
-          </>
-        )}
       </main>
 
       <ConfirmDialog
-        isOpen={!!pendingDelete}
-        title={
-          pendingDelete
-            ? `Delete ${
-                pendingDelete.type === "section"
-                  ? "Category"
-                  : pendingDelete.type.charAt(0).toUpperCase() + pendingDelete.type.slice(1)
-              }`
-            : ""
-        }
+        title={`Delete ${pendingDelete?.type}`}
         message={getDeleteMessage()}
-        onCancel={() => setPendingDelete(null)}
+        isOpen={!!pendingDelete}
         onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+        isDangerous
       />
     </div>
   );
