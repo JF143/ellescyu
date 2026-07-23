@@ -24,24 +24,24 @@ const sectionsWithUUIDs = seedData.sections.map(section => ({
 }));
 
 const productsWithUUIDs = seedData.products.map((product: any) => {
-  const originalSection = seedData.sections.find(s => s.id === product.sectionId);
+  const originalSection = seedData.sections.find(s => s.id === product.section_id);
   const newSection = sectionsWithUUIDs.find(s => s.name === originalSection?.name);
-  const { sectionId, ...rest } = product;
+  const { section_id, ...rest } = product;
   return {
     ...rest,
     id: uuidv4(),
-    section_id: newSection?.id || sectionId
+    section_id: newSection?.id || section_id
   };
 });
 
 const variantsWithUUIDs = seedData.variants.map((variant: any) => {
-  const originalProduct = seedData.products.find((p: any) => p.id === variant.productId);
+  const originalProduct = seedData.products.find((p: any) => p.id === variant.product_id);
   const newProduct = productsWithUUIDs.find(p => p.name === originalProduct?.name);
-  const { productId, ...rest } = variant;
+  const { product_id, ...rest } = variant;
   return {
     ...rest,
     id: uuidv4(),
-    product_id: newProduct?.id || productId
+    product_id: newProduct?.id || product_id
   };
 });
 
