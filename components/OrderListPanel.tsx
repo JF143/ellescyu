@@ -7,7 +7,6 @@ import { useCart } from "@/hooks/useCart";
 import { useMounted } from "@/hooks/useMounted";
 import { formatCurrency } from "@/lib/formatCurrency";
 
-type CheckoutStage = "cart" | "payment" | "change";
 
 const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
 
@@ -26,9 +25,10 @@ export function OrderListPanel() {
     decrementItem,
     removeItem,
     clearCart,
+    checkoutStage: stage,
+    setCheckoutStage: setStage,
   } = useCart();
-
-  const [stage, setStage] = useState<CheckoutStage>("cart");
+  
   const [amountInput, setAmountInput] = useState("");
   const [changeDue, setChangeDue] = useState(0);
   const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -326,13 +326,6 @@ export function OrderListPanel() {
           </p>
 
           <div className="border-t-2 border-dashed border-kiosk-muted pt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Sub Total</p>
-              <p className="text-base font-bold text-gray-900">{formatCurrency(cartTotal)}</p>
-            </div>
-
-            <div className="border-t border-dashed border-kiosk-muted" />
-
             <div className="flex items-center justify-between py-2">
               <p className="text-sm font-semibold text-gray-600">Total</p>
               <p className="text-3xl font-bold text-kiosk-primary">{formatCurrency(cartTotal)}</p>

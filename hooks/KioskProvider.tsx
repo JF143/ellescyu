@@ -12,21 +12,26 @@ import {
 import { STORAGE_KEYS, storageGet, storageSet } from "@/lib/storage";
 import type { CartItem, Variant } from "@/types";
 
+export type CheckoutStage = "cart" | "payment" | "change";
+
 type CartContextValue = {
   cart: CartItem[];
-  addToCart: (variant: Variant, productName: string) => void;
+  addToCart: (variant: Variant, productName: string) => boolean;
   incrementItem: (variantId: string) => void;
   decrementItem: (variantId: string) => void;
   removeItem: (variantId: string) => void;
   clearCart: () => CartItem[];
   cartTotal: number;
   cartCount: number;
+  checkoutStage: CheckoutStage;
+  setCheckoutStage: (stage: CheckoutStage) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function KioskProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [checkoutStage, setCheckoutStage] = useState<CheckoutStage>("cart");
 
   useEffect(() => {
     setCart(storageGet(STORAGE_KEYS.cart, []));
@@ -36,48 +41,68 @@ export function KioskProvider({ children }: { children: ReactNode }) {
     storageSet(STORAGE_KEYS.cart, cart);
   }, [cart]);
 
-  const addToCart = useCallback((variant: Variant, productName: string) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.variantId === variant.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.variantId === variant.id ? { ...item, quantity: item.quantity + 1 } : item,
-        );
+  const addToCart = useCallback(
+    (variant: Variant, productName: string) => {
+      // Block adding new items once checkout (payment/change) has started
+      if (checkoutStage !== "cart") {
+        return false;
       }
-      return [
-        ...prev,
-        {
-          variantId: variant.id,
-          productName,
-          variantLabel: variant.label,
-          price: variant.price,
-          quantity: 1,
-        },
-      ];
-    });
-  }, []);
+      setCart((prev) => {
+        const existing = prev.find((item) => item.variantId === variant.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.variantId === variant.id ? { ...item, quantity: item.quantity + 1 } : item,
+          );
+        }
+        return [
+          ...prev,
+          {
+            variantId: variant.id,
+            productName,
+            variantLabel: variant.label,
+            price: variant.price,
+            quantity: 1,
+          },
+        ];
+      });
+      return true;
+    },
+    [checkoutStage],
+  );
 
-  const incrementItem = useCallback((variantId: string) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.variantId === variantId ? { ...item, quantity: item.quantity + 1 } : item,
-      ),
-    );
-  }, []);
+  const incrementItem = useCallback(
+    (variantId: string) => {
+      if (checkoutStage !== "cart") return;
+      setCart((prev) =>
+        prev.map((item) =>
+          item.variantId === variantId ? { ...item, quantity: item.quantity + 1 } : item,
+        ),
+      );
+    },
+    [checkoutStage],
+  );
 
-  const decrementItem = useCallback((variantId: string) => {
-    setCart((prev) =>
-      prev
-        .map((item) =>
-          item.variantId === variantId ? { ...item, quantity: item.quantity - 1 } : item,
-        )
-        .filter((item) => item.quantity > 0),
-    );
-  }, []);
+  const decrementItem = useCallback(
+    (variantId: string) => {
+      if (checkoutStage !== "cart") return;
+      setCart((prev) =>
+        prev
+          .map((item) =>
+            item.variantId === variantId ? { ...item, quantity: item.quantity - 1 } : item,
+          )
+          .filter((item) => item.quantity > 0),
+      );
+    },
+    [checkoutStage],
+  );
 
-  const removeItem = useCallback((variantId: string) => {
-    setCart((prev) => prev.filter((item) => item.variantId !== variantId));
-  }, []);
+  const removeItem = useCallback(
+    (variantId: string) => {
+      if (checkoutStage !== "cart") return;
+      setCart((prev) => prev.filter((item) => item.variantId !== variantId));
+    },
+    [checkoutStage],
+  );
 
   const clearCart = useCallback(() => {
     let snapshot: CartItem[] = [];
@@ -108,8 +133,20 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       clearCart,
       cartTotal,
       cartCount,
+      checkoutStage,
+      setCheckoutStage,
     }),
-    [cart, addToCart, incrementItem, decrementItem, removeItem, clearCart, cartTotal, cartCount],
+    [
+      cart,
+      addToCart,
+      incrementItem,
+      decrementItem,
+      removeItem,
+      clearCart,
+      cartTotal,
+      cartCount,
+      checkoutStage,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -133,6 +170,8 @@ export function useCart() {
     clearCart,
     cartTotal,
     cartCount,
+    checkoutStage,
+    setCheckoutStage,
   } = useCartContext();
 
   return {
@@ -144,5 +183,7 @@ export function useCart() {
     clearCart,
     cartTotal,
     cartCount,
+    checkoutStage,
+    setCheckoutStage,
   };
 }

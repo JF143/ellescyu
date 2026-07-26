@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
+import { deleteProductImage } from "@/lib/uploadImage";
 import type { Section } from "@/types";
 
 export function useSections() {
@@ -68,9 +69,40 @@ export function useSections() {
   const deleteSection = useCallback(
     async (id: string) => {
       try {
+        // sections -> products -> variants are both CASCADE, so deleting a
+        // section wipes out every product and variant underneath it. Collect
+        // every image_url two levels deep before that happens, since we
+        // can't look any of it up afterward.
+        const { data: productRows, error: productsFetchError } = await supabase
+          .from("products")
+          .select("id, image_url")
+          .eq("section_id", id);
+
+        if (productsFetchError) throw productsFetchError;
+
+        const productIds = (productRows ?? []).map((row) => row.id);
+
+        let variantImageUrls: (string | null | undefined)[] = [];
+        if (productIds.length > 0) {
+          const { data: variantRows, error: variantsFetchError } = await supabase
+            .from("variants")
+            .select("image_url")
+            .in("product_id", productIds);
+
+          if (variantsFetchError) throw variantsFetchError;
+          variantImageUrls = (variantRows ?? []).map((row) => row.image_url);
+        }
+
         const { error } = await supabase.from("sections").delete().eq("id", id);
 
         if (error) throw error;
+
+        const allImageUrls = [
+          ...(productRows ?? []).map((row) => row.image_url),
+          ...variantImageUrls,
+        ];
+        await Promise.all(allImageUrls.map((url) => deleteProductImage(url)));
+
         await fetchSections();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete section");
@@ -92,4 +124,3 @@ export function useSections() {
     deleteSection,
   };
 }
-

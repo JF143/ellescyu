@@ -69,6 +69,16 @@ export function useBrands() {
   const deleteBrand = useCallback(
     async (id: string) => {
       try {
+        // products.brand_id has NO ACTION on delete, so Postgres will reject
+        // the delete outright if any product still references this brand.
+        // Detach them first so they fall back to "No brand" / "Other".
+        const { error: detachError } = await supabase
+          .from("products")
+          .update({ brand_id: null })
+          .eq("brand_id", id);
+
+        if (detachError) throw detachError;
+
         const { error } = await supabase.from("brands").delete().eq("id", id);
         if (error) throw error;
         await fetchBrands();

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
+import { deleteProductImage } from "@/lib/uploadImage";
 import type { Variant } from "@/types";
 
 export function useVariants() {
@@ -77,9 +78,20 @@ export function useVariants() {
   const deleteVariant = useCallback(
     async (id: string) => {
       try {
+        // Look up the image before deleting the row, so we know what to clean up
+        const { data: existing, error: fetchError } = await supabase
+          .from("variants")
+          .select("image_url")
+          .eq("id", id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
         const { error } = await supabase.from("variants").delete().eq("id", id);
 
         if (error) throw error;
+
+        await deleteProductImage(existing?.image_url);
         await fetchVariants();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete variant");

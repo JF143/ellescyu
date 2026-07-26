@@ -13,6 +13,7 @@ import { useCart } from "@/hooks/useCart";
 import { getBrand } from "@/lib/getBrand";
 import Link from "next/link";
 import type { Section } from "@/types";
+import { useToast } from "@/components/Toast";
 
 export default function HomePage() {
   const mounted = useMounted();
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [touchStartX, setTouchStartX] = useState(0);
   const mainRef = useRef<HTMLDivElement>(null);
   const { addToCart } = useCart();
+  const { showToast } = useToast();
 
   const {
     sections,
@@ -337,7 +339,12 @@ export default function HomePage() {
                 key={variant.id}
                 productName={product.name}
                 variant={variant}
-                onAdd={() => addToCart(variant, product.name)}
+                onAdd={() => {
+                  const added = addToCart(variant, product.name);
+                  if (!added) {
+                    showToast("Finish or cancel the current order first");
+                  }
+                }}
               />
             ))}
           </div>

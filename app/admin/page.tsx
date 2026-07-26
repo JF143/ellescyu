@@ -8,8 +8,9 @@ import { useVariants } from "@/hooks/useVariants";
 import { useBrands } from "@/hooks/useBrands";
 import { useToast } from "@/components/Toast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { uploadProductImage } from "@/lib/uploadImage";
+import { uploadProductImage, deleteProductImage } from "@/lib/uploadImage";
 import { formatCurrency } from "@/lib/formatCurrency";
+
 
 type PendingDelete =
   | { type: "brand"; id: string; name: string }
@@ -36,6 +37,7 @@ export default function AdminPage() {
   const [productVariantPrice, setProductVariantPrice] = useState("");
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [productImageInputKey, setProductImageInputKey] = useState(0);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [existingSectionId, setExistingSectionId] = useState("");
@@ -44,6 +46,7 @@ export default function AdminPage() {
   const [existingVariantPrice, setExistingVariantPrice] = useState("");
   const [existingVariantImageFile, setExistingVariantImageFile] = useState<File | null>(null);
   const [existingVariantImagePreview, setExistingVariantImagePreview] = useState<string | null>(null);
+  const [existingVariantImageInputKey, setExistingVariantImageInputKey] = useState(0);
   const [isUploadingExistingImage, setIsUploadingExistingImage] = useState(false);
 
   const [manageSearchQuery, setManageSearchQuery] = useState("");
@@ -111,12 +114,14 @@ export default function AdminPage() {
         [{ label: productVariantLabel.trim(), price, image_url: imageUrl }],
         productBrandId || undefined,
       );
+      setProductSectionId("");
       setProductName("");
       setProductVariantLabel("");
       setProductVariantPrice("");
       setProductBrandId("");
       setProductImageFile(null);
       setProductImagePreview(null);
+      setProductImageInputKey((key) => key + 1);
       showToast("Product added successfully");
     } catch (error) {
       setIsUploadingImage(false);
@@ -139,10 +144,13 @@ export default function AdminPage() {
       }
 
       await addVariant(existingProductId, existingVariantLabel.trim(), price, imageUrl);
+      setExistingSectionId("");
+      setExistingProductId("");
       setExistingVariantLabel("");
       setExistingVariantPrice("");
       setExistingVariantImageFile(null);
       setExistingVariantImagePreview(null);
+      setExistingVariantImageInputKey((key) => key + 1);
       showToast("Variant added successfully");
     } catch (error) {
       setIsUploadingExistingImage(false);
@@ -309,6 +317,7 @@ export default function AdminPage() {
             <label className="block">
               <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
               <input
+                key={productImageInputKey}
                 type="file"
                 accept="image/*"
                 onChange={(event) => {
@@ -394,6 +403,7 @@ export default function AdminPage() {
             <label className="block">
               <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
               <input
+                key={existingVariantImageInputKey}
                 type="file"
                 accept="image/*"
                 onChange={(event) => {
@@ -422,7 +432,7 @@ export default function AdminPage() {
         </section>
 
         <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Brands</h2>
+          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add & Manage Brands</h2>
 
           <form onSubmit={handleAddBrand} className="mb-6 flex gap-3">
             <input
@@ -728,9 +738,11 @@ export default function AdminPage() {
                                         onChange={async (event) => {
                                           const file = event.target.files?.[0];
                                           if (!file) return;
+                                          const previousImageUrl = variant.image_url;
                                           try {
                                             const imageUrl = await uploadProductImage(file);
                                             await updateVariant(variant.id, { image_url: imageUrl });
+                                            await deleteProductImage(previousImageUrl);
                                             showToast("Image updated");
                                           } catch (error) {
                                             console.error("Failed to upload image:", error);

@@ -60,8 +60,12 @@ export default function SectionPage() {
   }, [products, variants, sectionId, variantSearchQuery]);
 
   const handleAddToCart = (variant: Variant, productName: string) => {
-    addToCart(variant, productName);
-    showToast(`${productName} - ${variant.label} added to order list`);
+    const added = addToCart(variant, productName);
+    if (added) {
+      showToast(`${productName} - ${variant.label} added to order list`);
+    } else {
+      showToast("Finish or cancel the current order first");
+    }
   };
 
   const handleStartEdit = () => {
