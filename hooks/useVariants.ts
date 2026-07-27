@@ -78,20 +78,25 @@ export function useVariants() {
   const deleteVariant = useCallback(
     async (id: string) => {
       try {
-        // Look up the image before deleting the row, so we know what to clean up
-        const { data: existing, error: fetchError } = await supabase
-          .from("variants")
-          .select("image_url")
-          .eq("id", id)
-          .single();
-
-        if (fetchError) throw fetchError;
+        // Best-effort lookup — if this fails for any reason, we still want
+        // the actual delete below to go through; image cleanup is secondary.
+        let imageUrl: string | null | undefined = undefined;
+        try {
+          const { data: existing } = await supabase
+            .from("variants")
+            .select("image_url")
+            .eq("id", id)
+            .maybeSingle();
+          imageUrl = existing?.image_url;
+        } catch (lookupErr) {
+          console.error("Could not look up variant image before delete:", lookupErr);
+        }
 
         const { error } = await supabase.from("variants").delete().eq("id", id);
 
         if (error) throw error;
 
-        await deleteProductImage(existing?.image_url);
+        await deleteProductImage(imageUrl);
         await fetchVariants();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete variant");

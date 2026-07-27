@@ -96,28 +96,34 @@ export function useProducts() {
     [fetchProducts],
   );
 
-  const deleteProduct = useCallback(
+ const deleteProduct = useCallback(
     async (id: string) => {
       try {
-        // Gather this product's own image plus every variant's image before
-        // the delete cascades, since we won't be able to look them up after.
-        const [{ data: productRow, error: productFetchError }, { data: variantRows, error: variantsFetchError }] =
-          await Promise.all([
-            supabase.from("products").select("image_url").eq("id", id).single(),
-            supabase.from("variants").select("image_url").eq("product_id", id),
-          ]);
+        // Best-effort lookups — failures here should never block the actual delete.
+        let productImageUrl: string | null | undefined = undefined;
+        let variantImageUrls: (string | null | undefined)[] = [];
+        try {
+          const { data: productRow } = await supabase
+            .from("products")
+            .select("image_url")
+            .eq("id", id)
+            .maybeSingle();
+          productImageUrl = productRow?.image_url;
 
-        if (productFetchError) throw productFetchError;
-        if (variantsFetchError) throw variantsFetchError;
+          const { data: variantRows } = await supabase
+            .from("variants")
+            .select("image_url")
+            .eq("product_id", id);
+          variantImageUrls = (variantRows ?? []).map((row) => row.image_url);
+        } catch (lookupErr) {
+          console.error("Could not look up product/variant images before delete:", lookupErr);
+        }
 
         const { error } = await supabase.from("products").delete().eq("id", id);
 
         if (error) throw error;
 
-        const imageUrls = [
-          productRow?.image_url,
-          ...(variantRows ?? []).map((row) => row.image_url),
-        ];
+        const imageUrls = [productImageUrl, ...variantImageUrls];
         await Promise.all(imageUrls.map((url) => deleteProductImage(url)));
 
         await fetchProducts();

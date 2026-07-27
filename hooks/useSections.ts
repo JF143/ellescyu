@@ -69,38 +69,36 @@ export function useSections() {
   const deleteSection = useCallback(
     async (id: string) => {
       try {
-        // sections -> products -> variants are both CASCADE, so deleting a
-        // section wipes out every product and variant underneath it. Collect
-        // every image_url two levels deep before that happens, since we
-        // can't look any of it up afterward.
-        const { data: productRows, error: productsFetchError } = await supabase
-          .from("products")
-          .select("id, image_url")
-          .eq("section_id", id);
+        let allImageUrls: (string | null | undefined)[] = [];
+        try {
+          const { data: productRows } = await supabase
+            .from("products")
+            .select("id, image_url")
+            .eq("section_id", id);
 
-        if (productsFetchError) throw productsFetchError;
+          const productIds = (productRows ?? []).map((row) => row.id);
+          let variantImageUrls: (string | null | undefined)[] = [];
 
-        const productIds = (productRows ?? []).map((row) => row.id);
+          if (productIds.length > 0) {
+            const { data: variantRows } = await supabase
+              .from("variants")
+              .select("image_url")
+              .in("product_id", productIds);
+            variantImageUrls = (variantRows ?? []).map((row) => row.image_url);
+          }
 
-        let variantImageUrls: (string | null | undefined)[] = [];
-        if (productIds.length > 0) {
-          const { data: variantRows, error: variantsFetchError } = await supabase
-            .from("variants")
-            .select("image_url")
-            .in("product_id", productIds);
-
-          if (variantsFetchError) throw variantsFetchError;
-          variantImageUrls = (variantRows ?? []).map((row) => row.image_url);
+          allImageUrls = [
+            ...(productRows ?? []).map((row) => row.image_url),
+            ...variantImageUrls,
+          ];
+        } catch (lookupErr) {
+          console.error("Could not look up section images before delete:", lookupErr);
         }
 
         const { error } = await supabase.from("sections").delete().eq("id", id);
 
         if (error) throw error;
 
-        const allImageUrls = [
-          ...(productRows ?? []).map((row) => row.image_url),
-          ...variantImageUrls,
-        ];
         await Promise.all(allImageUrls.map((url) => deleteProductImage(url)));
 
         await fetchSections();
