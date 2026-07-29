@@ -8,15 +8,20 @@ import { useVariants } from "@/hooks/useVariants";
 import { useBrands } from "@/hooks/useBrands";
 import { useToast } from "@/components/Toast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { uploadProductImage, deleteProductImage } from "@/lib/uploadImage";
+import { Drawer } from "@/components/Drawer";
+import { uploadProductImage } from "@/lib/uploadImage";
 import { formatCurrency } from "@/lib/formatCurrency";
-
+import type { Product, Section, Brand } from "@/types";
 
 type PendingDelete =
   | { type: "brand"; id: string; name: string }
   | { type: "section"; id: string; name: string }
   | { type: "product"; id: string; name: string }
   | { type: "variant"; id: string; name: string };
+
+const inputClass =
+  "w-full rounded-xl border-2 border-[#c2c6d6] px-4 py-3 text-base outline-none focus:border-[#3b82f6] transition bg-[#f9f9ff]";
+const labelClass = "mb-2 block text-sm font-semibold text-[#424754]";
 
 export default function AdminPage() {
   const { sections, addSection, updateSection, deleteSection } = useSections();
@@ -25,137 +30,206 @@ export default function AdminPage() {
   const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
 
-  const [newBrandName, setNewBrandName] = useState("");
-  const [productBrandId, setProductBrandId] = useState("");
-
-  const [newSectionName, setNewSectionName] = useState("");
-  const [newSectionIcon, setNewSectionIcon] = useState("");
-
-  const [productSectionId, setProductSectionId] = useState("");
-  const [productName, setProductName] = useState("");
-  const [productVariantLabel, setProductVariantLabel] = useState("");
-  const [productVariantPrice, setProductVariantPrice] = useState("");
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-  const [productImageInputKey, setProductImageInputKey] = useState(0);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-
-  const [existingSectionId, setExistingSectionId] = useState("");
-  const [existingProductId, setExistingProductId] = useState("");
-  const [existingVariantLabel, setExistingVariantLabel] = useState("");
-  const [existingVariantPrice, setExistingVariantPrice] = useState("");
-  const [existingVariantImageFile, setExistingVariantImageFile] = useState<File | null>(null);
-  const [existingVariantImagePreview, setExistingVariantImagePreview] = useState<string | null>(null);
-  const [existingVariantImageInputKey, setExistingVariantImageInputKey] = useState(0);
-  const [isUploadingExistingImage, setIsUploadingExistingImage] = useState(false);
-
-  const [manageSearchQuery, setManageSearchQuery] = useState("");
-  const [manageCategoryFilter, setManageCategoryFilter] = useState("");
-  const [brandSearchQuery, setBrandSearchQuery] = useState("");
-  const [categorySearchQuery, setCategorySearchQuery] = useState("");
-
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
-  const productsInSection = useMemo(
-    () => products.filter((product) => product.section_id === existingSectionId),
-    [products, existingSectionId],
-  );
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [productCategoryFilter, setProductCategoryFilter] = useState("");
 
-  const handleAddSection = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!newSectionName.trim()) return;
+  const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Section | null>(null);
+  const [categoryFormName, setCategoryFormName] = useState("");
+  const [categoryFormIcon, setCategoryFormIcon] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
+
+  const [brandDrawerOpen, setBrandDrawerOpen] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+  const [brandFormName, setBrandFormName] = useState("");
+  const [savingBrand, setSavingBrand] = useState(false);
+
+  const [productDrawerOpen, setProductDrawerOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productFormName, setProductFormName] = useState("");
+  const [productFormSectionId, setProductFormSectionId] = useState("");
+  const [productFormBrandId, setProductFormBrandId] = useState("");
+  const [savingProduct, setSavingProduct] = useState(false);
+
+  const [firstVariantLabel, setFirstVariantLabel] = useState("");
+  const [firstVariantPrice, setFirstVariantPrice] = useState("");
+  const [firstVariantImageFile, setFirstVariantImageFile] = useState<File | null>(null);
+  const [firstVariantImagePreview, setFirstVariantImagePreview] = useState<string | null>(null);
+
+  const [newVariantLabel, setNewVariantLabel] = useState("");
+  const [newVariantPrice, setNewVariantPrice] = useState("");
+  const [newVariantImageFile, setNewVariantImageFile] = useState<File | null>(null);
+  const [newVariantImagePreview, setNewVariantImagePreview] = useState<string | null>(null);
+  const [savingNewVariant, setSavingNewVariant] = useState(false);
+
+  const isDuplicateError = (error: unknown) =>
+    typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "23505";
+
+  const openAddCategory = () => {
+    setEditingCategory(null);
+    setCategoryFormName("");
+    setCategoryFormIcon("");
+    setCategoryDrawerOpen(true);
+  };
+
+  const openEditCategory = (section: Section) => {
+    setEditingCategory(section);
+    setCategoryFormName(section.name);
+    setCategoryFormIcon(section.icon ?? "");
+    setCategoryDrawerOpen(true);
+  };
+
+  const saveCategory = async () => {
+    if (!categoryFormName.trim()) return;
+    setSavingCategory(true);
     try {
-      await addSection(newSectionName.trim(), newSectionIcon.trim() || undefined);
-      setNewSectionName("");
-      setNewSectionIcon("");
-      showToast("Category added successfully");
+      if (editingCategory) {
+        await updateSection(editingCategory.id, {
+          name: categoryFormName.trim(),
+          icon: categoryFormIcon.trim() || undefined,
+        });
+        showToast("Category updated");
+      } else {
+        await addSection(categoryFormName.trim(), categoryFormIcon.trim() || undefined);
+        showToast("Category added successfully");
+      }
+      setCategoryDrawerOpen(false);
     } catch (error) {
-      const isDuplicate =
-        typeof error === "object" && error !== null && "code" in error && error.code === "23505";
-      showToast(isDuplicate ? "That category already exists" : "Failed to add category");
-      console.error("Failed to add category:", error);
+      showToast(isDuplicateError(error) ? "That category already exists" : "Failed to save category");
+      console.error("Failed to save category:", error);
+    } finally {
+      setSavingCategory(false);
     }
   };
 
-  const handleAddBrand = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!newBrandName.trim()) return;
+  const openAddBrand = () => {
+    setEditingBrand(null);
+    setBrandFormName("");
+    setBrandDrawerOpen(true);
+  };
+
+  const openEditBrand = (brand: Brand) => {
+    setEditingBrand(brand);
+    setBrandFormName(brand.name);
+    setBrandDrawerOpen(true);
+  };
+
+  const saveBrand = async () => {
+    if (!brandFormName.trim()) return;
+    setSavingBrand(true);
     try {
-      await addBrand(newBrandName.trim());
-      setNewBrandName("");
-      showToast("Brand added successfully");
+      if (editingBrand) {
+        await updateBrand(editingBrand.id, brandFormName.trim());
+        showToast("Brand updated");
+      } else {
+        await addBrand(brandFormName.trim());
+        showToast("Brand added successfully");
+      }
+      setBrandDrawerOpen(false);
     } catch (error) {
-      const isDuplicate =
-        typeof error === "object" && error !== null && "code" in error && error.code === "23505";
-      showToast(isDuplicate ? "That brand already exists" : "Failed to add brand");
-      console.error("Failed to add brand:", error);
+      showToast(isDuplicateError(error) ? "That brand already exists" : "Failed to save brand");
+      console.error("Failed to save brand:", error);
+    } finally {
+      setSavingBrand(false);
     }
   };
 
-  const handleAddProduct = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!productSectionId || !productName.trim() || !productVariantLabel.trim() || !productVariantPrice.trim())
-      return;
+  const resetProductVariantForms = () => {
+    setFirstVariantLabel("");
+    setFirstVariantPrice("");
+    setFirstVariantImageFile(null);
+    setFirstVariantImagePreview(null);
+    setNewVariantLabel("");
+    setNewVariantPrice("");
+    setNewVariantImageFile(null);
+    setNewVariantImagePreview(null);
+  };
 
-    const price = Number(productVariantPrice);
-    if (Number.isNaN(price) || price < 0) return;
+  const openAddProduct = (sectionId?: string) => {
+    setEditingProduct(null);
+    setProductFormName("");
+    setProductFormSectionId(sectionId ?? "");
+    setProductFormBrandId("");
+    resetProductVariantForms();
+    setProductDrawerOpen(true);
+  };
 
+  const openEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductFormName(product.name);
+    setProductFormSectionId(product.section_id);
+    setProductFormBrandId(product.brand_id ?? "");
+    resetProductVariantForms();
+    setProductDrawerOpen(true);
+  };
+
+  const saveProduct = async () => {
+    if (!productFormSectionId || !productFormName.trim()) return;
+    setSavingProduct(true);
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, {
+          name: productFormName.trim(),
+          section_id: productFormSectionId,
+          brand_id: productFormBrandId || null,
+        });
+        showToast("Product updated");
+      } else {
+        if (!firstVariantLabel.trim() || !firstVariantPrice.trim()) {
+          showToast("Add at least one variant label and price");
+          setSavingProduct(false);
+          return;
+        }
+        const price = Number(firstVariantPrice);
+        if (Number.isNaN(price) || price < 0) {
+          setSavingProduct(false);
+          return;
+        }
+        let imageUrl: string | undefined;
+        if (firstVariantImageFile) {
+          imageUrl = await uploadProductImage(firstVariantImageFile);
+        }
+        await addProduct(
+          productFormSectionId,
+          productFormName.trim(),
+          [{ label: firstVariantLabel.trim(), price, image_url: imageUrl }],
+          productFormBrandId || undefined,
+        );
+        showToast("Product added successfully");
+      }
+      setProductDrawerOpen(false);
+    } catch (error) {
+      console.error("Failed to save product:", error);
+      showToast("Failed to save product");
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleAddVariantToEditingProduct = async () => {
+    if (!editingProduct) return;
+    const price = Number(newVariantPrice);
+    if (!newVariantLabel.trim() || Number.isNaN(price)) return;
+
+    setSavingNewVariant(true);
     try {
       let imageUrl: string | undefined;
-      if (productImageFile) {
-        setIsUploadingImage(true);
-        imageUrl = await uploadProductImage(productImageFile);
-        setIsUploadingImage(false);
+      if (newVariantImageFile) {
+        imageUrl = await uploadProductImage(newVariantImageFile);
       }
-
-      await addProduct(
-        productSectionId,
-        productName.trim(),
-        [{ label: productVariantLabel.trim(), price, image_url: imageUrl }],
-        productBrandId || undefined,
-      );
-      setProductSectionId("");
-      setProductName("");
-      setProductVariantLabel("");
-      setProductVariantPrice("");
-      setProductBrandId("");
-      setProductImageFile(null);
-      setProductImagePreview(null);
-      setProductImageInputKey((key) => key + 1);
-      showToast("Product added successfully");
+      await addVariant(editingProduct.id, newVariantLabel.trim(), price, imageUrl);
+      setNewVariantLabel("");
+      setNewVariantPrice("");
+      setNewVariantImageFile(null);
+      setNewVariantImagePreview(null);
+      showToast("Variant added");
     } catch (error) {
-      setIsUploadingImage(false);
-      console.error("Failed to add product:", error);
-      showToast("Failed to add product");
-    }
-  };
-
-  const handleAddExistingVariant = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const price = Number(existingVariantPrice);
-    if (!existingProductId || !existingVariantLabel.trim() || Number.isNaN(price)) return;
-
-    try {
-      let imageUrl: string | undefined;
-      if (existingVariantImageFile) {
-        setIsUploadingExistingImage(true);
-        imageUrl = await uploadProductImage(existingVariantImageFile);
-        setIsUploadingExistingImage(false);
-      }
-
-      await addVariant(existingProductId, existingVariantLabel.trim(), price, imageUrl);
-      setExistingSectionId("");
-      setExistingProductId("");
-      setExistingVariantLabel("");
-      setExistingVariantPrice("");
-      setExistingVariantImageFile(null);
-      setExistingVariantImagePreview(null);
-      setExistingVariantImageInputKey((key) => key + 1);
-      showToast("Variant added successfully");
-    } catch (error) {
-      setIsUploadingExistingImage(false);
       console.error("Failed to add variant:", error);
       showToast("Failed to add variant");
+    } finally {
+      setSavingNewVariant(false);
     }
   };
 
@@ -166,14 +240,17 @@ export default function AdminPage() {
         case "brand":
           await deleteBrand(pendingDelete.id);
           showToast("Brand deleted");
+          setBrandDrawerOpen(false);
           break;
         case "section":
           await deleteSection(pendingDelete.id);
           showToast("Category deleted");
+          setCategoryDrawerOpen(false);
           break;
         case "product":
           await deleteProduct(pendingDelete.id);
           showToast("Product deleted");
+          setProductDrawerOpen(false);
           break;
         case "variant":
           await deleteVariant(pendingDelete.id);
@@ -202,413 +279,140 @@ export default function AdminPage() {
     }
   };
 
+  const editingProductVariants = useMemo(
+    () => (editingProduct ? variants.filter((v) => v.product_id === editingProduct.id) : []),
+    [variants, editingProduct],
+  );
+
+  const filteredProductSections = useMemo(() => {
+    return sections
+      .filter((section) => !productCategoryFilter || section.id === productCategoryFilter)
+      .map((section) => ({
+        section,
+        products: products.filter(
+          (p) =>
+            p.section_id === section.id &&
+            p.name.toLowerCase().includes(productSearchQuery.toLowerCase()),
+        ),
+      }))
+      .filter(({ products: p }) => !productSearchQuery || p.length > 0);
+  }, [sections, products, productSearchQuery, productCategoryFilter]);
+
+  const priceRangeFor = (productId: string) => {
+    const productVariants = variants.filter((v) => v.product_id === productId);
+    if (productVariants.length === 0) return "No variants";
+    const prices = productVariants.map((v) => v.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return min === max ? formatCurrency(min) : `${formatCurrency(min)} – ${formatCurrency(max)}`;
+  };
+
+  const brandNameFor = (brandId?: string | null) => brands.find((b) => b.id === brandId)?.name;
+
   return (
-    <div className="h-screen overflow-y-auto bg-kiosk-lighter">
-      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm">
+    <div className="h-screen overflow-y-auto bg-[#f9f9ff]">
+      <header className="border-b-2 border-[#c2c6d6]/40 bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl lg:text-4xl font-bold text-kiosk-primary">Admin</h1>
-            <p className="mt-1 text-xs lg:text-sm font-medium text-gray-600 uppercase tracking-wide">Manage categories, products, and variants</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-[#3b82f6]">Admin</h1>
+            <p className="mt-1 text-xs lg:text-sm font-medium text-[#424754]">Manage categories, products, and brands</p>
           </div>
           <Link
             href="/"
-            className="rounded-[14px] lg:rounded-[16px] bg-kiosk-muted px-4 py-2.5 lg:px-6 lg:py-4 text-sm lg:text-lg font-bold text-kiosk-primary smooth-transition tap-scale hover:bg-kiosk-accent hover:text-white"
+            className="rounded-xl bg-[#e7eeff] px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-bold text-[#3b82f6] transition hover:bg-[#3b82f6] hover:text-white"
           >
             ← Back to Kiosk
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:gap-8 lg:px-8 lg:py-10 lg:grid-cols-2">
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Category</h2>
-          <form onSubmit={handleAddSection} className="space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category name</span>
-              <input
-                value={newSectionName}
-                onChange={(event) => setNewSectionName(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="e.g. Snacks"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Icon (optional)</span>
-              <input
-                value={newSectionIcon}
-                onChange={(event) => setNewSectionIcon(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="e.g. 🍿"
-              />
-            </label>
+      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-10 space-y-10">
+        {/* ===== Categories ===== */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Categories</h2>
             <button
-              type="submit"
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
+              type="button"
+              onClick={openAddCategory}
+              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
             >
-              Add Category
+              + Add Category
             </button>
-          </form>
-        </section>
-
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add New Product</h2>
-          <p className="mb-4 -mt-2 text-xs text-gray-500">
-            Each product starts with one variant + photo. Add more variants later from "Add Variant to Existing Product" below.
-          </p>
-          <form onSubmit={handleAddProduct} className="space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
-              <select
-                value={productSectionId}
-                onChange={(event) => setProductSectionId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">Select category</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product name</span>
-              <input
-                value={productName}
-                onChange={(event) => setProductName(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="e.g. Nescafe Creamy White"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Brand</span>
-              <select
-                value={productBrandId}
-                onChange={(event) => setProductBrandId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">No brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={productVariantLabel}
-                onChange={(event) => setProductVariantLabel(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Label (e.g. Single)"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={productVariantPrice}
-                onChange={(event) => setProductVariantPrice(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Price"
-              />
-            </div>
-
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
-              <input
-                key={productImageInputKey}
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  setProductImageFile(file);
-                  setProductImagePreview(file ? URL.createObjectURL(file) : null);
-                }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              />
-              {productImagePreview && (
-                <img
-                  src={productImagePreview}
-                  alt="Preview"
-                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
-                />
-              )}
-            </label>
-
-            <button
-              type="submit"
-              disabled={isUploadingImage}
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
-            >
-              {isUploadingImage ? "Uploading image..." : "Save Product"}
-            </button>
-          </form>
-        </section>
-
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add Variant to Existing Product</h2>
-          <form onSubmit={handleAddExistingVariant} className="space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Category</span>
-              <select
-                value={existingSectionId}
-                onChange={(event) => {
-                  setExistingSectionId(event.target.value);
-                  setExistingProductId("");
-                }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              >
-                <option value="">Select category</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Product</span>
-              <select
-                value={existingProductId}
-                onChange={(event) => setExistingProductId(event.target.value)}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                disabled={!existingSectionId}
-              >
-                <option value="">Select product</option>
-                {productsInSection.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={existingVariantLabel}
-                onChange={(event) => setExistingVariantLabel(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Variant label"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={existingVariantPrice}
-                onChange={(event) => setExistingVariantPrice(event.target.value)}
-                className="rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-                placeholder="Price"
-              />
-            </div>
-            <label className="block">
-              <span className="mb-2 block text-sm lg:text-lg font-semibold text-gray-700">Variant Image (optional)</span>
-              <input
-                key={existingVariantImageInputKey}
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  setExistingVariantImageFile(file);
-                  setExistingVariantImagePreview(file ? URL.createObjectURL(file) : null);
-                }}
-                className="w-full rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-sm lg:text-base outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              />
-              {existingVariantImagePreview && (
-                <img
-                  src={existingVariantImagePreview}
-                  alt="Preview"
-                  className="mt-3 h-24 w-24 rounded-[12px] object-cover card-shadow"
-                />
-              )}
-            </label>
-            <button
-              type="submit"
-              disabled={isUploadingExistingImage}
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow smooth-transition tap-scale disabled:opacity-50 hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
-            >
-              {isUploadingExistingImage ? "Uploading image..." : "Add Variant"}
-            </button>
-          </form>
-        </section>
-
-        <section className="rounded-[18px] lg:rounded-[24px] bg-white p-4 lg:p-8 card-shadow lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Add & Manage Brands</h2>
-
-          <form onSubmit={handleAddBrand} className="mb-6 flex gap-3">
-            <input
-              value={newBrandName}
-              onChange={(event) => setNewBrandName(event.target.value)}
-              className="flex-1 rounded-[12px] border-2 border-kiosk-muted px-3 py-2.5 text-base lg:px-4 lg:py-3 lg:text-lg outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition"
-              placeholder="e.g. Nescafe"
-            />
-            <button
-              type="submit"
-              className="rounded-[14px] bg-kiosk-primary px-6 py-3 text-lg font-bold text-white card-shadow smooth-transition tap-scale hover:shadow-[0_8px_24px_rgba(80,129,190,0.12)]"
-            >
-              Add Brand
-            </button>
-          </form>
-
-          <div className="relative mb-6">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={brandSearchQuery}
-              onChange={(event) => setBrandSearchQuery(event.target.value)}
-              placeholder="Search brands..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
-            />
           </div>
 
-          {(() => {
-            const filteredBrands = brands.filter((brand) =>
-              brand.name.toLowerCase().includes(brandSearchQuery.toLowerCase()),
-            );
-
-            if (brands.length === 0) {
-              return <p className="text-gray-500">No brands yet.</p>;
-            }
-
-            if (filteredBrands.length === 0) {
-              return <p className="text-gray-500">No brands match your search.</p>;
-            }
-
-            return (
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredBrands.map((brand) => (
-                  <li
-                    key={brand.id}
-                    className="flex items-center gap-2 rounded-xl border border-kiosk-muted bg-kiosk-lighter px-4 py-2"
-                  >
-                    <input
-                      defaultValue={brand.name}
-                      onBlur={async (event) => {
-                        const name = event.target.value.trim();
-                        if (name && name !== brand.name) {
-                          try {
-                            await updateBrand(brand.id, name);
-                          } catch (error) {
-                            console.error("Failed to update brand:", error);
-                          }
-                        }
-                      }}
-                      className="rounded-lg border border-white bg-white px-3 py-2 font-semibold outline-none focus:border-kiosk-accent"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPendingDelete({ type: "brand", id: brand.id, name: brand.name })}
-                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            );
-          })()}
-        </section>
-
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Categories</h2>
-
-          <div className="relative mb-6">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={categorySearchQuery}
-              onChange={(event) => setCategorySearchQuery(event.target.value)}
-              placeholder="Search categories..."
-              className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
-            />
-          </div>
-
-          {(() => {
-            const filteredCategories = sections.filter((section) =>
-              section.name.toLowerCase().includes(categorySearchQuery.toLowerCase()),
-            );
-
-            if (sections.length === 0) {
-              return <p className="text-gray-500">No categories yet.</p>;
-            }
-
-            if (filteredCategories.length === 0) {
-              return <p className="text-gray-500">No categories match your search.</p>;
-            }
-
-            return (
-              <ul className="space-y-3">
-                {filteredCategories.map((section) => (
-                  <li
-                    key={section.id}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-kiosk-muted bg-kiosk-lighter px-4 py-3"
-                  >
-                    <input
-                      defaultValue={section.icon ?? ""}
-                      onBlur={async (event) => {
-                        const icon = event.target.value.trim();
-                        if (icon !== (section.icon ?? "")) {
-                          try {
-                            await updateSection(section.id, { icon: icon || undefined });
-                          } catch (error) {
-                            console.error("Failed to update category:", error);
-                          }
-                        }
-                      }}
-                      className="w-16 rounded-lg border border-white bg-white px-3 py-2 text-center text-xl outline-none focus:border-kiosk-accent"
-                      placeholder="Icon"
-                    />
-                    <input
-                      defaultValue={section.name}
-                      onBlur={async (event) => {
-                        const name = event.target.value.trim();
-                        if (name && name !== section.name) {
-                          try {
-                            await updateSection(section.id, { name });
-                          } catch (error) {
-                            console.error("Failed to update category:", error);
-                          }
-                        }
-                      }}
-                      className="flex-1 rounded-lg border border-white bg-white px-3 py-2 font-semibold outline-none focus:border-kiosk-accent"
-                    />
-                    <span className="text-sm text-gray-500">
+          {sections.length === 0 ? (
+            <p className="text-[#424754]">No categories yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => openEditCategory(section)}
+                  className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm border border-[#c2c6d6]/40 text-left transition hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <span className="text-2xl">{section.icon ?? "📦"}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-[#111c2d] truncate">{section.name}</p>
+                    <p className="text-xs text-[#424754]">
                       {products.filter((p) => p.section_id === section.id).length} products
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPendingDelete({ type: "section", id: section.id, name: section.name })}
-                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            );
-          })()}
+                    </p>
+                  </div>
+                  <span className="text-[#727785]">✎</span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
-        <section className="rounded-2xl lg:rounded-3xl bg-white p-4 lg:p-6 shadow-md lg:col-span-2">
-          <h2 className="mb-4 lg:mb-6 text-lg lg:text-2xl font-bold text-kiosk-primary">Manage Products</h2>
+        {/* ===== Brands ===== */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Brands</h2>
+            <button
+              type="button"
+              onClick={openAddBrand}
+              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+            >
+              + Add Brand
+            </button>
+          </div>
 
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          {brands.length === 0 ? (
+            <p className="text-[#424754]">No brands yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {brands.map((brand) => (
+                <button
+                  key={brand.id}
+                  type="button"
+                  onClick={() => openEditBrand(brand)}
+                  className="rounded-full bg-[#d5e4f8] px-4 py-2 text-sm font-semibold text-[#576676] shadow-sm transition hover:bg-[#3b82f6] hover:text-white"
+                >
+                  {brand.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ===== Products ===== */}
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Products</h2>
+            <button
+              type="button"
+              onClick={() => openAddProduct()}
+              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+            >
+              + Add Product
+            </button>
+          </div>
+
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-3 shadow-sm border border-[#c2c6d6]/40 sm:flex-row">
             <div className="relative flex-1">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-muted pointer-events-none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#727785] pointer-events-none"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -617,16 +421,16 @@ export default function AdminPage() {
               </svg>
               <input
                 type="text"
-                value={manageSearchQuery}
-                onChange={(event) => setManageSearchQuery(event.target.value)}
+                value={productSearchQuery}
+                onChange={(event) => setProductSearchQuery(event.target.value)}
                 placeholder="Search products..."
-                className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-3 text-lg outline-none focus:border-kiosk-accent"
+                className="w-full rounded-xl border-2 border-[#c2c6d6] pl-11 pr-4 py-2.5 outline-none focus:border-[#3b82f6] bg-[#f9f9ff]"
               />
             </div>
             <select
-              value={manageCategoryFilter}
-              onChange={(event) => setManageCategoryFilter(event.target.value)}
-              className="rounded-xl border-2 border-kiosk-muted px-4 py-3 text-lg outline-none focus:border-kiosk-accent sm:w-56"
+              value={productCategoryFilter}
+              onChange={(event) => setProductCategoryFilter(event.target.value)}
+              className="rounded-xl border-2 border-[#c2c6d6] px-4 py-2.5 outline-none focus:border-[#3b82f6] bg-[#f9f9ff] sm:w-56"
             >
               <option value="">All Categories</option>
               {sections.map((section) => (
@@ -638,172 +442,413 @@ export default function AdminPage() {
           </div>
 
           <div className="space-y-8">
-            {sections
-              .filter((section) => !manageCategoryFilter || section.id === manageCategoryFilter)
-              .map((section) => {
-                const sectionProducts = products.filter(
-                  (product) =>
-                    product.section_id === section.id &&
-                    product.name.toLowerCase().includes(manageSearchQuery.toLowerCase()),
-                );
+            {filteredProductSections.map(({ section, products: sectionProducts }) => (
+              <div key={section.id}>
+                <div className="mb-3 flex items-center gap-2 px-1">
+                  <span className="text-lg">{section.icon ?? "📦"}</span>
+                  <h3 className="font-bold text-[#111c2d]">{section.name}</h3>
+                  <span className="text-xs text-[#424754] bg-[#e7eeff] px-2 py-0.5 rounded-full">
+                    {sectionProducts.length} items
+                  </span>
+                </div>
 
-                if (manageSearchQuery && sectionProducts.length === 0) return null;
-
-                return (
-                  <div key={section.id} className="rounded-2xl border border-kiosk-muted bg-kiosk-lighter p-5">
-                    <div className="mb-4 flex flex-wrap items-center gap-3">
-                      <h3 className="flex-1 text-xl font-bold text-kiosk-primary">
-                        {section.icon ?? "📦"} {section.name}
-                      </h3>
-                    </div>
-
-                    {sectionProducts.length === 0 ? (
-                      <p className="text-gray-500">No products in this category.</p>
-                    ) : (
-                      <ul className="space-y-4">
-                        {sectionProducts.map((product) => {
-                          const productVariants = variants.filter(
-                            (variant) => variant.product_id === product.id,
-                          );
-
-                          return (
-                            <li
-                              key={product.id}
-                              className="rounded-2xl border border-kiosk-muted bg-white p-4"
-                            >
-                              <div className="mb-3 flex flex-wrap items-center gap-3">
-                                <input
-                                  defaultValue={product.name}
-                                  onBlur={async (event) => {
-                                    const name = event.target.value.trim();
-                                    if (name && name !== product.name) {
-                                      try {
-                                        await updateProduct(product.id, { name });
-                                      } catch (error) {
-                                        console.error("Failed to update product:", error);
-                                      }
-                                    }
-                                  }}
-                                  className="flex-1 rounded-xl border-2 border-kiosk-muted px-4 py-2 text-lg font-semibold outline-none focus:border-kiosk-accent"
-                                />
-                                <select
-                                  defaultValue={product.brand_id ?? ""}
-                                  onChange={async (event) => {
-                                    const brandId = event.target.value || null;
-                                    try {
-                                      await updateProduct(product.id, { brand_id: brandId });
-                                    } catch (error) {
-                                      console.error("Failed to update product brand:", error);
-                                    }
-                                  }}
-                                  className="rounded-xl border-2 border-kiosk-muted px-3 py-2 outline-none focus:border-kiosk-accent"
-                                >
-                                  <option value="">No brand</option>
-                                  {brands.map((brand) => (
-                                    <option key={brand.id} value={brand.id}>
-                                      {brand.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setPendingDelete({ type: "product", id: product.id, name: product.name })
-                                  }
-                                  className="rounded-xl bg-red-100 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                                >
-                                  Delete Product
-                                </button>
-                              </div>
-
-                              <ul className="space-y-2">
-                                {productVariants.map((variant) => (
-                                  <li
-                                    key={variant.id}
-                                    className="flex flex-wrap items-center gap-3 rounded-xl bg-kiosk-lighter p-3"
-                                  >
-                                    {variant.image_url && (
-                                      <img
-                                        src={variant.image_url}
-                                        alt={variant.label}
-                                        className="h-12 w-12 rounded-lg object-cover border border-kiosk-muted"
-                                      />
-                                    )}
-                                    <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-3 py-2 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
-                                      {variant.image_url ? "Change" : "Add Photo"}
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={async (event) => {
-                                          const file = event.target.files?.[0];
-                                          if (!file) return;
-                                          const previousImageUrl = variant.image_url;
-                                          try {
-                                            const imageUrl = await uploadProductImage(file);
-                                            await updateVariant(variant.id, { image_url: imageUrl });
-                                            await deleteProductImage(previousImageUrl);
-                                            showToast("Image updated");
-                                          } catch (error) {
-                                            console.error("Failed to upload image:", error);
-                                            showToast("Failed to upload image");
-                                          }
-                                        }}
-                                      />
-                                    </label>
-                                    <input
-                                      defaultValue={variant.label}
-                                      onBlur={(event) => {
-                                        const label = event.target.value.trim();
-                                        if (label && label !== variant.label) {
-                                          updateVariant(variant.id, { label });
-                                        }
-                                      }}
-                                      className="flex-1 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                    />
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      defaultValue={variant.price}
-                                      onBlur={(event) => {
-                                        const price = Number(event.target.value);
-                                        if (!Number.isNaN(price) && price !== variant.price) {
-                                          updateVariant(variant.id, { price });
-                                        }
-                                      }}
-                                      className="w-28 rounded-lg border border-kiosk-muted bg-white px-3 py-2 outline-none focus:border-kiosk-accent"
-                                    />
-                                    <span className="font-semibold text-black">
-                                      {formatCurrency(variant.price)}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setPendingDelete({
-                                          type: "variant",
-                                          id: variant.id,
-                                          name: `${product.name} (${variant.label})`,
-                                        })
-                                      }
-                                      className="rounded-lg bg-red-100 px-3 py-2 font-semibold text-red-600 transition hover:bg-red-200"
-                                    >
-                                      Delete
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+                {sectionProducts.length === 0 ? (
+                  <p className="px-1 text-sm text-[#424754]">No products in this category.</p>
+                ) : (
+                  <div className="rounded-2xl bg-white shadow-sm border border-[#c2c6d6]/40 divide-y divide-[#c2c6d6]/30 overflow-hidden">
+                    {sectionProducts.map((product) => {
+                      const firstVariant = variants.find((v) => v.product_id === product.id);
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => openEditProduct(product)}
+                          className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-[#f0f3ff]/60"
+                        >
+                          <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#e7eeff] flex items-center justify-center">
+                            {firstVariant?.image_url ? (
+                              <img src={firstVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="text-xl">📦</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-[#111c2d] truncate">{product.name}</p>
+                            {brandNameFor(product.brand_id) && (
+                              <span className="inline-block mt-1 rounded-full bg-[#d5e4f8] px-2.5 py-0.5 text-xs font-semibold text-[#576676]">
+                                {brandNameFor(product.brand_id)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="shrink-0 font-bold text-[#111c2d]">{priceRangeFor(product.id)}</p>
+                          <span className="shrink-0 text-[#727785]">✎</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                )}
+              </div>
+            ))}
           </div>
         </section>
       </main>
+
+      {/* ===== Category Drawer ===== */}
+      <Drawer
+        isOpen={categoryDrawerOpen}
+        onClose={() => setCategoryDrawerOpen(false)}
+        title={editingCategory ? "Edit Category" : "Add New Category"}
+        subtitle={editingCategory ? undefined : "Create a new section for the kiosk sidebar."}
+        footer={
+          <>
+            {editingCategory && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPendingDelete({ type: "section", id: editingCategory.id, name: editingCategory.name })
+                }
+                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+              >
+                Delete Category
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setCategoryDrawerOpen(false)}
+              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveCategory}
+              disabled={savingCategory || !categoryFormName.trim()}
+              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+            >
+              {savingCategory ? "Saving..." : "Save"}
+            </button>
+          </>
+        }
+      >
+        <label className="block">
+          <span className={labelClass}>Category name</span>
+          <input
+            value={categoryFormName}
+            onChange={(event) => setCategoryFormName(event.target.value)}
+            className={inputClass}
+            placeholder="e.g. Snacks"
+            autoFocus
+          />
+        </label>
+        <label className="block">
+          <span className={labelClass}>Icon (emoji)</span>
+          <input
+            value={categoryFormIcon}
+            onChange={(event) => setCategoryFormIcon(event.target.value)}
+            className={inputClass}
+            placeholder="e.g. 🍿"
+          />
+        </label>
+      </Drawer>
+
+      {/* ===== Brand Drawer ===== */}
+      <Drawer
+        isOpen={brandDrawerOpen}
+        onClose={() => setBrandDrawerOpen(false)}
+        title={editingBrand ? "Edit Brand" : "Add New Brand"}
+        footer={
+          <>
+            {editingBrand && (
+              <button
+                type="button"
+                onClick={() => setPendingDelete({ type: "brand", id: editingBrand.id, name: editingBrand.name })}
+                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+              >
+                Delete Brand
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setBrandDrawerOpen(false)}
+              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveBrand}
+              disabled={savingBrand || !brandFormName.trim()}
+              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+            >
+              {savingBrand ? "Saving..." : "Save"}
+            </button>
+          </>
+        }
+      >
+        <label className="block">
+          <span className={labelClass}>Brand name</span>
+          <input
+            value={brandFormName}
+            onChange={(event) => setBrandFormName(event.target.value)}
+            className={inputClass}
+            placeholder="e.g. Nescafe"
+            autoFocus
+          />
+        </label>
+      </Drawer>
+
+      {/* ===== Product Drawer ===== */}
+      <Drawer
+        isOpen={productDrawerOpen}
+        onClose={() => setProductDrawerOpen(false)}
+        title={editingProduct ? "Edit Product" : "Add New Product"}
+        subtitle={
+          editingProduct
+            ? "Update details, or add another variant below."
+            : "Create the product with its first variant."
+        }
+        footer={
+          <>
+            {editingProduct && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPendingDelete({ type: "product", id: editingProduct.id, name: editingProduct.name })
+                }
+                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+              >
+                Delete Product
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setProductDrawerOpen(false)}
+              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveProduct}
+              disabled={savingProduct || !productFormName.trim() || !productFormSectionId}
+              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+            >
+              {savingProduct ? "Saving..." : "Save"}
+            </button>
+          </>
+        }
+      >
+        <label className="block">
+          <span className={labelClass}>Product name</span>
+          <input
+            value={productFormName}
+            onChange={(event) => setProductFormName(event.target.value)}
+            className={inputClass}
+            placeholder="e.g. Nescafe Creamy White"
+            autoFocus
+          />
+        </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className={labelClass}>Category</span>
+            <select
+              value={productFormSectionId}
+              onChange={(event) => setProductFormSectionId(event.target.value)}
+              className={inputClass}
+            >
+              <option value="">Select category</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className={labelClass}>Brand</span>
+            <select
+              value={productFormBrandId}
+              onChange={(event) => setProductFormBrandId(event.target.value)}
+              className={inputClass}
+            >
+              <option value="">No brand</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {!editingProduct && (
+          <div className="rounded-2xl border-2 border-dashed border-[#c2c6d6] p-4 space-y-4">
+            <p className="text-sm font-semibold text-[#424754]">First Variant</p>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={firstVariantLabel}
+                onChange={(event) => setFirstVariantLabel(event.target.value)}
+                className={inputClass}
+                placeholder="Label (e.g. Single)"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={firstVariantPrice}
+                onChange={(event) => setFirstVariantPrice(event.target.value)}
+                className={inputClass}
+                placeholder="Price"
+              />
+            </div>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold text-[#727785]">Photo (optional)</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setFirstVariantImageFile(file);
+                  setFirstVariantImagePreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="w-full text-sm"
+              />
+              {firstVariantImagePreview && (
+                <img
+                  src={firstVariantImagePreview}
+                  alt="Preview"
+                  className="mt-2 h-20 w-20 rounded-xl object-cover border border-[#c2c6d6]"
+                />
+              )}
+            </label>
+          </div>
+        )}
+
+        {editingProduct && (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-[#424754]">Variants</p>
+
+            {editingProductVariants.length === 0 ? (
+              <p className="text-sm text-[#727785]">No variants yet — add one below.</p>
+            ) : (
+              <div className="space-y-3">
+                {editingProductVariants.map((variant) => (
+                  <div
+                    key={variant.id}
+                    className="flex flex-wrap items-center gap-2 rounded-xl bg-[#f0f3ff] p-3"
+                  >
+                    {variant.image_url && (
+                      <img
+                        src={variant.image_url}
+                        alt={variant.label}
+                        className="h-11 w-11 rounded-lg object-cover border border-[#c2c6d6]"
+                      />
+                    )}
+                    <label className="cursor-pointer rounded-lg bg-white border border-[#c2c6d6] px-2.5 py-1.5 text-xs font-semibold text-[#3b82f6] hover:bg-[#e7eeff] transition">
+                      {variant.image_url ? "Change" : "Photo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imageUrl = await uploadProductImage(file);
+                            await updateVariant(variant.id, { image_url: imageUrl });
+                          } catch (error) {
+                            console.error("Failed to upload image:", error);
+                            showToast("Failed to upload image");
+                          }
+                        }}
+                      />
+                    </label>
+                    <input
+                      defaultValue={variant.label}
+                      onBlur={(event) => {
+                        const label = event.target.value.trim();
+                        if (label && label !== variant.label) updateVariant(variant.id, { label });
+                      }}
+                      className="flex-1 min-w-[100px] rounded-lg border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#3b82f6]"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={variant.price}
+                      onBlur={(event) => {
+                        const price = Number(event.target.value);
+                        if (!Number.isNaN(price) && price !== variant.price) updateVariant(variant.id, { price });
+                      }}
+                      className="w-24 rounded-lg border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#3b82f6]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPendingDelete({
+                          type: "variant",
+                          id: variant.id,
+                          name: `${editingProduct.name} (${variant.label})`,
+                        })
+                      }
+                      className="rounded-lg bg-[#ffdad6] px-3 py-2 text-xs font-semibold text-[#ba1a1a] transition hover:opacity-80"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="rounded-2xl border-2 border-dashed border-[#c2c6d6] p-4 space-y-3">
+              <p className="text-xs font-semibold text-[#727785]">+ Add another variant</p>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  value={newVariantLabel}
+                  onChange={(event) => setNewVariantLabel(event.target.value)}
+                  className={inputClass}
+                  placeholder="Label"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newVariantPrice}
+                  onChange={(event) => setNewVariantPrice(event.target.value)}
+                  className={inputClass}
+                  placeholder="Price"
+                />
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setNewVariantImageFile(file);
+                  setNewVariantImagePreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="w-full text-sm"
+              />
+              {newVariantImagePreview && (
+                <img
+                  src={newVariantImagePreview}
+                  alt="Preview"
+                  className="h-20 w-20 rounded-xl object-cover border border-[#c2c6d6]"
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleAddVariantToEditingProduct}
+                disabled={savingNewVariant || !newVariantLabel.trim() || !newVariantPrice.trim()}
+                className="w-full h-11 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold text-sm transition hover:bg-[#dee8ff] disabled:opacity-50"
+              >
+                {savingNewVariant ? "Adding..." : "Add Variant"}
+              </button>
+            </div>
+          </div>
+        )}
+      </Drawer>
 
       <ConfirmDialog
         isOpen={!!pendingDelete}
