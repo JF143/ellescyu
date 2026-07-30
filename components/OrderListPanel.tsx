@@ -194,7 +194,7 @@ export function OrderListPanel() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <p className="text-base font-bold text-kiosk-primary">
+                    <p className="text-base font-bold text-foreground">
                       {formatCurrency(item.price * item.quantity)}
                     </p>
                     <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
@@ -227,7 +227,7 @@ export function OrderListPanel() {
           <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent border-t-2 border-kiosk-muted px-6 py-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Subtotal</span>
-              <span className="text-lg font-bold text-kiosk-primary">
+              <span className="text-lg font-bold text-foreground">
                 {formatCurrency(cartTotal)}
               </span>
             </div>
@@ -250,7 +250,7 @@ export function OrderListPanel() {
         <div className="flex flex-1 flex-col overflow-y-auto px-6 py-4">
           <div className="mb-4 rounded-[14px] bg-kiosk-lighter p-4 text-center card-shadow">
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Amount Due</p>
-            <p className="text-3xl font-bold text-kiosk-primary">{formatCurrency(cartTotal)}</p>
+            <p className="text-3xl font-bold text-foreground">{formatCurrency(cartTotal)}</p>
           </div>
 
           <div className="mb-4 rounded-[14px] border-2 border-dashed border-kiosk-muted bg-white p-4 text-center">
@@ -331,7 +331,7 @@ export function OrderListPanel() {
           <div className="border-t-2 border-dashed border-kiosk-muted pt-4 space-y-3">
             <div className="flex items-center justify-between py-2">
               <p className="text-sm font-semibold text-gray-600">Total</p>
-              <p className="text-3xl font-bold text-kiosk-primary">{formatCurrency(cartTotal)}</p>
+              <p className="text-3xl font-bold text-foreground">{formatCurrency(cartTotal)}</p>
             </div>
 
             <div className="border-t border-kiosk-muted" />
@@ -379,7 +379,7 @@ export function OrderListPanel() {
           onTouchStart={handleTouchStartSheet}
           onTouchMove={handleTouchMoveSheet}
           onTouchEnd={handleTouchEndSheet}
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-gradient-to-r from-kiosk-primary to-kiosk-accent px-5 py-4 text-white card-shadow-xl touch-manipulation transition-transform duration-300"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-kiosk-primary px-5 py-4 text-white shadow-2xl touch-manipulation"
           style={{ transform: `translateY(${Math.max(0, sheetTranslate)}px)` }}
         >
           <span className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-white/40" />

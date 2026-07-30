@@ -15,7 +15,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer }: D
   return (
     <>
       <div
-        className={`fixed inset-0 bg-[#263143]/40 backdrop-blur-sm z-[70] transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-foreground/40 backdrop-blur-sm z-[70] transition-opacity duration-300 ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -28,16 +28,16 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer }: D
         role="dialog"
         aria-modal="true"
       >
-        <div className="p-6 lg:p-8 border-b border-[#c2c6d6]/40 flex items-start justify-between bg-[#f0f3ff]/50 shrink-0">
+        <div className="p-6 lg:p-8 border-b border-kiosk-muted flex items-start justify-between bg-kiosk-lighter/50 shrink-0">
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-[#111c2d]">{title}</h2>
-            {subtitle && <p className="text-sm text-[#424754] mt-1">{subtitle}</p>}
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">{title}</h2>
+            {subtitle && <p className="text-sm text-kiosk-accent mt-1">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#3b82f6] hover:bg-[#e7eeff] transition"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-kiosk-primary hover:bg-kiosk-light transition"
           >
             ✕
           </button>
@@ -46,7 +46,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer }: D
         <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">{children}</div>
 
         {footer && (
-          <div className="p-6 lg:p-8 border-t border-[#c2c6d6]/40 bg-white flex items-center gap-3 shrink-0">
+          <div className="p-6 lg:p-8 border-t border-kiosk-muted bg-white flex items-center gap-3 shrink-0">
             {footer}
           </div>
         )}

@@ -20,8 +20,8 @@ type PendingDelete =
   | { type: "variant"; id: string; name: string };
 
 const inputClass =
-  "w-full rounded-xl border-2 border-[#c2c6d6] px-4 py-3 text-base outline-none focus:border-[#3b82f6] transition bg-[#f9f9ff]";
-const labelClass = "mb-2 block text-sm font-semibold text-[#424754]";
+  "w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-base outline-none focus:border-kiosk-primary transition bg-kiosk-canvas";
+const labelClass = "mb-2 block text-sm font-semibold text-kiosk-accent";
 
 export default function AdminPage() {
   const { sections, addSection, updateSection, deleteSection } = useSections();
@@ -34,20 +34,19 @@ export default function AdminPage() {
 
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
-
   const [expandedProductCategories, setExpandedProductCategories] = useState<Set<string>>(new Set());
 
-const toggleProductCategory = (sectionId: string) => {
-  setExpandedProductCategories((prev) => {
-    const next = new Set(prev);
-    if (next.has(sectionId)) {
-      next.delete(sectionId);
-    } else {
-      next.add(sectionId);
-    }
-    return next;
-  });
-};
+  const toggleProductCategory = (sectionId: string) => {
+    setExpandedProductCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
 
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Section | null>(null);
@@ -329,16 +328,16 @@ const toggleProductCategory = (sectionId: string) => {
   const brandNameFor = (brandId?: string | null) => brands.find((b) => b.id === brandId)?.name;
 
   return (
-    <div className="h-screen overflow-y-auto bg-[#f9f9ff]">
-      <header className="border-b-2 border-[#c2c6d6]/40 bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
+    <div className="h-screen overflow-y-auto bg-kiosk-canvas">
+      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-[#3b82f6]">Admin</h1>
-            <p className="mt-1 text-xs lg:text-sm font-medium text-[#424754]">Manage categories, products, and brands</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-kiosk-primary">Admin</h1>
+            <p className="mt-1 text-xs lg:text-sm font-medium text-kiosk-accent">Manage categories, products, and brands</p>
           </div>
           <Link
             href="/"
-            className="rounded-xl bg-[#e7eeff] px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-bold text-[#3b82f6] transition hover:bg-[#3b82f6] hover:text-white"
+            className="rounded-xl bg-kiosk-lighter px-4 py-2.5 lg:px-6 lg:py-3 text-sm lg:text-base font-bold text-kiosk-primary transition hover:bg-kiosk-primary hover:text-white"
           >
             ← Back to Kiosk
           </Link>
@@ -349,18 +348,18 @@ const toggleProductCategory = (sectionId: string) => {
         {/* ===== Categories ===== */}
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Categories</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-foreground">Categories</h2>
             <button
               type="button"
               onClick={openAddCategory}
-              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
             >
               + Add Category
             </button>
           </div>
 
           {sections.length === 0 ? (
-            <p className="text-[#424754]">No categories yet.</p>
+            <p className="text-kiosk-accent">No categories yet.</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {sections.map((section) => (
@@ -368,16 +367,16 @@ const toggleProductCategory = (sectionId: string) => {
                   key={section.id}
                   type="button"
                   onClick={() => openEditCategory(section)}
-                  className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm border border-[#c2c6d6]/40 text-left transition hover:shadow-md hover:-translate-y-0.5"
+                  className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted text-left transition hover:shadow-md hover:-translate-y-0.5"
                 >
                   <span className="text-2xl">{section.icon ?? "📦"}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[#111c2d] truncate">{section.name}</p>
-                    <p className="text-xs text-[#424754]">
+                    <p className="font-bold text-foreground truncate">{section.name}</p>
+                    <p className="text-xs text-kiosk-accent">
                       {products.filter((p) => p.section_id === section.id).length} products
                     </p>
                   </div>
-                  <span className="text-[#727785]">✎</span>
+                  <span className="text-kiosk-accent">✎</span>
                 </button>
               ))}
             </div>
@@ -387,18 +386,18 @@ const toggleProductCategory = (sectionId: string) => {
         {/* ===== Brands ===== */}
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Brands</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-foreground">Brands</h2>
             <button
               type="button"
               onClick={openAddBrand}
-              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
             >
               + Add Brand
             </button>
           </div>
 
           {brands.length === 0 ? (
-            <p className="text-[#424754]">No brands yet.</p>
+            <p className="text-kiosk-accent">No brands yet.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {brands.map((brand) => (
@@ -406,7 +405,7 @@ const toggleProductCategory = (sectionId: string) => {
                   key={brand.id}
                   type="button"
                   onClick={() => openEditBrand(brand)}
-                  className="rounded-full bg-[#d5e4f8] px-4 py-2 text-sm font-semibold text-[#576676] shadow-sm transition hover:bg-[#3b82f6] hover:text-white"
+                  className="rounded-full bg-white border-2 border-kiosk-muted px-5 py-2.5 text-sm font-bold text-kiosk-primary shadow-sm transition hover:bg-kiosk-lighter"
                 >
                   {brand.name}
                 </button>
@@ -418,20 +417,20 @@ const toggleProductCategory = (sectionId: string) => {
         {/* ===== Products ===== */}
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg lg:text-xl font-bold text-[#111c2d]">Products</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-foreground">Products</h2>
             <button
               type="button"
               onClick={() => openAddProduct()}
-              className="rounded-full bg-[#3b82f6] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
             >
               + Add Product
             </button>
           </div>
 
-          <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-3 shadow-sm border border-[#c2c6d6]/40 sm:flex-row">
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-3 shadow-sm border border-kiosk-muted sm:flex-row">
             <div className="relative flex-1">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#727785] pointer-events-none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-accent pointer-events-none"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -443,13 +442,13 @@ const toggleProductCategory = (sectionId: string) => {
                 value={productSearchQuery}
                 onChange={(event) => setProductSearchQuery(event.target.value)}
                 placeholder="Search products..."
-                className="w-full rounded-xl border-2 border-[#c2c6d6] pl-11 pr-4 py-2.5 outline-none focus:border-[#3b82f6] bg-[#f9f9ff]"
+                className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
               />
             </div>
             <select
               value={productCategoryFilter}
               onChange={(event) => setProductCategoryFilter(event.target.value)}
-              className="rounded-xl border-2 border-[#c2c6d6] px-4 py-2.5 outline-none focus:border-[#3b82f6] bg-[#f9f9ff] sm:w-56"
+              className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas sm:w-56"
             >
               <option value="">All Categories</option>
               {sections.map((section) => (
@@ -466,19 +465,19 @@ const toggleProductCategory = (sectionId: string) => {
                 ? searchMatchedSectionIds.has(section.id)
                 : expandedProductCategories.has(section.id);
               return (
-                <div key={section.id} className="rounded-2xl bg-white shadow-sm border border-[#c2c6d6]/40 overflow-hidden">
+                <div key={section.id} className="rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-hidden">
                   <button
                     type="button"
                     onClick={() => toggleProductCategory(section.id)}
-                    className="w-full flex items-center gap-2 px-4 py-4 text-left transition hover:bg-[#f0f3ff]/60"
+                    className="w-full flex items-center gap-2 px-4 py-4 text-left transition hover:bg-kiosk-lighter/60"
                   >
                     <span className="text-lg">{section.icon ?? "📦"}</span>
-                    <h3 className="font-bold text-[#111c2d]">{section.name}</h3>
-                    <span className="text-xs text-[#424754] bg-[#e7eeff] px-2 py-0.5 rounded-full">
+                    <h3 className="font-bold text-foreground">{section.name}</h3>
+                    <span className="text-xs text-kiosk-accent bg-kiosk-lighter px-2 py-0.5 rounded-full">
                       {sectionProducts.length} items
                     </span>
                     <span
-                      className={`ml-auto text-xl text-[#727785] transition-transform duration-200 ${
+                      className={`ml-auto text-xl text-kiosk-accent transition-transform duration-200 ${
                         isExpanded ? "rotate-180" : ""
                       }`}
                     >
@@ -487,9 +486,9 @@ const toggleProductCategory = (sectionId: string) => {
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-[#c2c6d6]/30 divide-y divide-[#c2c6d6]/30">
+                    <div className="border-t border-kiosk-muted divide-y divide-kiosk-muted">
                       {sectionProducts.length === 0 ? (
-                        <p className="px-4 py-4 text-sm text-[#424754]">No products in this category.</p>
+                        <p className="px-4 py-4 text-sm text-kiosk-accent">No products in this category.</p>
                       ) : (
                         sectionProducts.map((product) => {
                           const firstVariant = variants.find((v) => v.product_id === product.id);
@@ -498,9 +497,9 @@ const toggleProductCategory = (sectionId: string) => {
                               key={product.id}
                               type="button"
                               onClick={() => openEditProduct(product)}
-                              className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-[#f0f3ff]/60"
+                              className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-kiosk-lighter/60"
                             >
-                              <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#e7eeff] flex items-center justify-center">
+                              <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-kiosk-lighter flex items-center justify-center">
                                 {firstVariant?.image_url ? (
                                   <img src={firstVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
                                 ) : (
@@ -508,15 +507,15 @@ const toggleProductCategory = (sectionId: string) => {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-[#111c2d] truncate">{product.name}</p>
+                                <p className="font-bold text-foreground truncate">{product.name}</p>
                                 {brandNameFor(product.brand_id) && (
-                                  <span className="inline-block mt-1 rounded-full bg-[#d5e4f8] px-2.5 py-0.5 text-xs font-semibold text-[#576676]">
+                                  <span className="inline-block mt-1 rounded-full bg-kiosk-lighter px-2.5 py-0.5 text-xs font-semibold text-kiosk-primary">
                                     {brandNameFor(product.brand_id)}
                                   </span>
                                 )}
                               </div>
-                              <p className="shrink-0 font-bold text-[#111c2d]">{priceRangeFor(product.id)}</p>
-                              <span className="shrink-0 text-[#727785]">✎</span>
+                              <p className="shrink-0 font-bold text-black">{priceRangeFor(product.id)}</p>
+                              <span className="shrink-0 text-kiosk-accent">✎</span>
                             </button>
                           );
                         })
@@ -544,7 +543,7 @@ const toggleProductCategory = (sectionId: string) => {
                 onClick={() =>
                   setPendingDelete({ type: "section", id: editingCategory.id, name: editingCategory.name })
                 }
-                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+                className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
               >
                 Delete Category
               </button>
@@ -552,7 +551,7 @@ const toggleProductCategory = (sectionId: string) => {
             <button
               type="button"
               onClick={() => setCategoryDrawerOpen(false)}
-              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+              className="h-12 px-6 rounded-xl bg-kiosk-lighter text-kiosk-primary font-bold transition hover:bg-kiosk-light"
             >
               Cancel
             </button>
@@ -560,7 +559,7 @@ const toggleProductCategory = (sectionId: string) => {
               type="button"
               onClick={saveCategory}
               disabled={savingCategory || !categoryFormName.trim()}
-              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+              className="flex-1 h-12 rounded-xl bg-kiosk-primary text-white font-bold transition hover:opacity-90 disabled:opacity-50"
             >
               {savingCategory ? "Saving..." : "Save"}
             </button>
@@ -574,7 +573,6 @@ const toggleProductCategory = (sectionId: string) => {
             onChange={(event) => setCategoryFormName(event.target.value)}
             className={inputClass}
             placeholder="e.g. Snacks"
-            autoFocus
           />
         </label>
         <label className="block">
@@ -599,7 +597,7 @@ const toggleProductCategory = (sectionId: string) => {
               <button
                 type="button"
                 onClick={() => setPendingDelete({ type: "brand", id: editingBrand.id, name: editingBrand.name })}
-                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+                className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
               >
                 Delete Brand
               </button>
@@ -607,7 +605,7 @@ const toggleProductCategory = (sectionId: string) => {
             <button
               type="button"
               onClick={() => setBrandDrawerOpen(false)}
-              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+              className="h-12 px-6 rounded-xl bg-kiosk-lighter text-kiosk-primary font-bold transition hover:bg-kiosk-light"
             >
               Cancel
             </button>
@@ -615,7 +613,7 @@ const toggleProductCategory = (sectionId: string) => {
               type="button"
               onClick={saveBrand}
               disabled={savingBrand || !brandFormName.trim()}
-              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+              className="flex-1 h-12 rounded-xl bg-kiosk-primary text-white font-bold transition hover:opacity-90 disabled:opacity-50"
             >
               {savingBrand ? "Saving..." : "Save"}
             </button>
@@ -629,7 +627,6 @@ const toggleProductCategory = (sectionId: string) => {
             onChange={(event) => setBrandFormName(event.target.value)}
             className={inputClass}
             placeholder="e.g. Nescafe"
-            autoFocus
           />
         </label>
       </Drawer>
@@ -652,7 +649,7 @@ const toggleProductCategory = (sectionId: string) => {
                 onClick={() =>
                   setPendingDelete({ type: "product", id: editingProduct.id, name: editingProduct.name })
                 }
-                className="mr-auto text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+                className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
               >
                 Delete Product
               </button>
@@ -660,7 +657,7 @@ const toggleProductCategory = (sectionId: string) => {
             <button
               type="button"
               onClick={() => setProductDrawerOpen(false)}
-              className="h-12 px-6 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold transition hover:bg-[#dee8ff]"
+              className="h-12 px-6 rounded-xl bg-kiosk-lighter text-kiosk-primary font-bold transition hover:bg-kiosk-light"
             >
               Cancel
             </button>
@@ -668,7 +665,7 @@ const toggleProductCategory = (sectionId: string) => {
               type="button"
               onClick={saveProduct}
               disabled={savingProduct || !productFormName.trim() || !productFormSectionId}
-              className="flex-1 h-12 rounded-xl bg-[#3b82f6] text-white font-bold transition hover:opacity-90 disabled:opacity-50"
+              className="flex-1 h-12 rounded-xl bg-kiosk-primary text-white font-bold transition hover:opacity-90 disabled:opacity-50"
             >
               {savingProduct ? "Saving..." : "Save"}
             </button>
@@ -682,7 +679,7 @@ const toggleProductCategory = (sectionId: string) => {
             onChange={(event) => setProductFormName(event.target.value)}
             className={inputClass}
             placeholder="e.g. Nescafe Creamy White"
-            autoFocus
+            
           />
         </label>
 
@@ -720,8 +717,8 @@ const toggleProductCategory = (sectionId: string) => {
         </div>
 
         {!editingProduct && (
-          <div className="rounded-2xl border-2 border-dashed border-[#c2c6d6] p-4 space-y-4">
-            <p className="text-sm font-semibold text-[#424754]">First Variant</p>
+          <div className="rounded-2xl border-2 border-dashed border-kiosk-muted p-4 space-y-4">
+            <p className="text-sm font-semibold text-kiosk-accent">First Variant</p>
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={firstVariantLabel}
@@ -740,7 +737,7 @@ const toggleProductCategory = (sectionId: string) => {
               />
             </div>
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold text-[#727785]">Photo (optional)</span>
+              <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -755,7 +752,7 @@ const toggleProductCategory = (sectionId: string) => {
                 <img
                   src={firstVariantImagePreview}
                   alt="Preview"
-                  className="mt-2 h-20 w-20 rounded-xl object-cover border border-[#c2c6d6]"
+                  className="mt-2 h-20 w-20 rounded-xl object-cover border border-kiosk-muted"
                 />
               )}
             </label>
@@ -764,25 +761,25 @@ const toggleProductCategory = (sectionId: string) => {
 
         {editingProduct && (
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-[#424754]">Variants</p>
+            <p className="text-sm font-semibold text-kiosk-accent">Variants</p>
 
             {editingProductVariants.length === 0 ? (
-              <p className="text-sm text-[#727785]">No variants yet — add one below.</p>
+              <p className="text-sm text-kiosk-accent">No variants yet — add one below.</p>
             ) : (
               <div className="space-y-3">
                 {editingProductVariants.map((variant) => (
                   <div
                     key={variant.id}
-                    className="flex flex-wrap items-center gap-2 rounded-xl bg-[#f0f3ff] p-3"
+                    className="flex flex-wrap items-center gap-2 rounded-xl bg-kiosk-lighter p-3"
                   >
                     {variant.image_url && (
                       <img
                         src={variant.image_url}
                         alt={variant.label}
-                        className="h-11 w-11 rounded-lg object-cover border border-[#c2c6d6]"
+                        className="h-11 w-11 rounded-lg object-cover border border-kiosk-muted"
                       />
                     )}
-                    <label className="cursor-pointer rounded-lg bg-white border border-[#c2c6d6] px-2.5 py-1.5 text-xs font-semibold text-[#3b82f6] hover:bg-[#e7eeff] transition">
+                    <label className="cursor-pointer rounded-lg bg-white border border-kiosk-muted px-2.5 py-1.5 text-xs font-semibold text-kiosk-primary hover:bg-kiosk-light transition">
                       {variant.image_url ? "Change" : "Photo"}
                       <input
                         type="file"
@@ -807,7 +804,7 @@ const toggleProductCategory = (sectionId: string) => {
                         const label = event.target.value.trim();
                         if (label && label !== variant.label) updateVariant(variant.id, { label });
                       }}
-                      className="flex-1 min-w-[100px] rounded-lg border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#3b82f6]"
+                      className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
                     />
                     <input
                       type="number"
@@ -818,7 +815,7 @@ const toggleProductCategory = (sectionId: string) => {
                         const price = Number(event.target.value);
                         if (!Number.isNaN(price) && price !== variant.price) updateVariant(variant.id, { price });
                       }}
-                      className="w-24 rounded-lg border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#3b82f6]"
+                      className="w-24 rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
                     />
                     <button
                       type="button"
@@ -829,7 +826,7 @@ const toggleProductCategory = (sectionId: string) => {
                           name: `${editingProduct.name} (${variant.label})`,
                         })
                       }
-                      className="rounded-lg bg-[#ffdad6] px-3 py-2 text-xs font-semibold text-[#ba1a1a] transition hover:opacity-80"
+                      className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
                     >
                       Delete
                     </button>
@@ -838,8 +835,8 @@ const toggleProductCategory = (sectionId: string) => {
               </div>
             )}
 
-            <div className="rounded-2xl border-2 border-dashed border-[#c2c6d6] p-4 space-y-3">
-              <p className="text-xs font-semibold text-[#727785]">+ Add another variant</p>
+            <div className="rounded-2xl border-2 border-dashed border-kiosk-muted p-4 space-y-3">
+              <p className="text-xs font-semibold text-kiosk-accent">+ Add another variant</p>
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={newVariantLabel}
@@ -871,14 +868,14 @@ const toggleProductCategory = (sectionId: string) => {
                 <img
                   src={newVariantImagePreview}
                   alt="Preview"
-                  className="h-20 w-20 rounded-xl object-cover border border-[#c2c6d6]"
+                  className="h-20 w-20 rounded-xl object-cover border border-kiosk-muted"
                 />
               )}
               <button
                 type="button"
                 onClick={handleAddVariantToEditingProduct}
                 disabled={savingNewVariant || !newVariantLabel.trim() || !newVariantPrice.trim()}
-                className="w-full h-11 rounded-xl bg-[#e7eeff] text-[#3b82f6] font-bold text-sm transition hover:bg-[#dee8ff] disabled:opacity-50"
+                className="w-full h-11 rounded-xl bg-kiosk-lighter text-kiosk-primary font-bold text-sm transition hover:bg-kiosk-light disabled:opacity-50"
               >
                 {savingNewVariant ? "Adding..." : "Add Variant"}
               </button>
