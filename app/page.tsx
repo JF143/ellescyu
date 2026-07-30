@@ -152,7 +152,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-kiosk-lighter to-kiosk-light">
+    <div className="flex h-screen overflow-hidden bg-kiosk-canvas">
       {/* Mobile / portrait top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between bg-white border-b border-kiosk-muted px-4 py-3">
         <button
@@ -202,12 +202,12 @@ export default function HomePage() {
         />
         
         {/* Drawer panel */}
-        <div
-          className={`w-72 max-w-[80%] overflow-y-auto bg-white shadow-2xl transition-all duration-300 ease-out ${
+        <div 
+          className={`w-72 max-w-[80%] overflow-y-auto bg-kiosk-lighter shadow-2xl transition-all duration-300 ease-out ${
             mobileCategoriesOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-            <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
+            <div className="sticky top-0 bg-kiosk-lighter z-10 p-4 border-b border-kiosk-muted">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
                 <div className="flex items-center gap-1">
@@ -240,7 +240,7 @@ export default function HomePage() {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-[12px] border border-kiosk-muted bg-white text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent smooth-transition card-shadow"
+                className="w-full pl-9 pr-3 py-2.5 rounded-2xl border-none bg-kiosk-canvas text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-kiosk-primary smooth-transition"
               />
               </div>
             </div>
@@ -249,10 +249,9 @@ export default function HomePage() {
       </div>
 
       {/* Desktop / iPad landscape sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-white shadow-xl border-r border-kiosk-muted touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
+        <aside className="hidden lg:block fixed left-0 top-0 bottom-0 z-40 w-64 overflow-y-auto bg-kiosk-canvas shadow-xl border-r border-kiosk-muted touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">        <div className="sticky top-0 bg-white z-10 p-4 border-b border-kiosk-muted">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-kiosk-primary">Categories</h2>
+            <h2 className="text-xl font-bold text-foreground">Categories</h2>
             <Link
               href="/admin"
               aria-label="Admin settings"
@@ -273,7 +272,7 @@ export default function HomePage() {
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-kiosk-muted bg-kiosk-lighter text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-transparent transition"
+              className="w-full pl-9 pr-3 py-2.5 rounded-2xl border-none bg-kiosk-canvas text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-kiosk-primary transition"
             />
           </div>
         </div>
@@ -289,13 +288,13 @@ export default function HomePage() {
         <div className="px-4 py-6 lg:px-8 lg:py-12">
           <header className="mb-6 hidden lg:flex items-start justify-between">
             <div>
-              <p className="text-sm font-semibold text-kiosk-accent uppercase tracking-wide mb-2">
+              <p className="text-sm font-semibold text-kiosk-primary uppercase tracking-wide mb-2">
                 {selectedSection ? "Now Browsing" : "Welcome"}
               </p>
-              <h1 className="text-6xl font-bold text-kiosk-primary mb-3">
+              <h1 className="text-6xl font-bold text-foreground mb-3">
                 {selectedSection ? `${selectedSection.icon ?? "📦"} ${selectedSection.name}` : "Ellescyu's Kiosk"}
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-kiosk-accent">
                 {selectedSection
                   ? `Browsing ${selectedSection.name} — tap an item to add it to your order`
                   : "Browse through the products and build the customer's order"}
@@ -303,7 +302,7 @@ export default function HomePage() {
             </div>
             {now && (
               <div className="text-right shrink-0">
-                <p className="text-3xl font-bold text-kiosk-primary tabular-nums">
+                <p className="text-3xl font-bold text-foreground tabular-nums">
                   {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
                 <p className="text-sm text-gray-500">
@@ -319,11 +318,11 @@ export default function HomePage() {
             </svg>
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search products..."
               value={productSearchQuery}
               onChange={(e) => setProductSearchQuery(e.target.value)}
               autoFocus={mobileSearchOpen}
-              className="w-full rounded-full border-2 border-kiosk-primary bg-white pl-12 pr-4 py-3 text-base text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-kiosk-primary focus:border-kiosk-primary smooth-transition"
+              className="w-full rounded-3xl border-none bg-white pl-12 pr-4 py-4 text-base text-gray-900 placeholder-gray-500 shadow-[0_4px_20px_rgba(80,129,190,0.08)] outline-none focus:ring-2 focus:ring-kiosk-primary smooth-transition"
             />
           </div>
 

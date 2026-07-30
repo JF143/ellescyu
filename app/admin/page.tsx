@@ -35,6 +35,20 @@ export default function AdminPage() {
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
 
+  const [expandedProductCategories, setExpandedProductCategories] = useState<Set<string>>(new Set());
+
+const toggleProductCategory = (sectionId: string) => {
+  setExpandedProductCategories((prev) => {
+    const next = new Set(prev);
+    if (next.has(sectionId)) {
+      next.delete(sectionId);
+    } else {
+      next.add(sectionId);
+    }
+    return next;
+  });
+};
+
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Section | null>(null);
   const [categoryFormName, setCategoryFormName] = useState("");
@@ -298,6 +312,11 @@ export default function AdminPage() {
       .filter(({ products: p }) => !productSearchQuery || p.length > 0);
   }, [sections, products, productSearchQuery, productCategoryFilter]);
 
+  const searchMatchedSectionIds = useMemo(() => {
+    if (!productSearchQuery.trim()) return null;
+    return new Set(filteredProductSections.map(({ section }) => section.id));
+  }, [filteredProductSections, productSearchQuery]);
+
   const priceRangeFor = (productId: string) => {
     const productVariants = variants.filter((v) => v.product_id === productId);
     if (productVariants.length === 0) return "No variants";
@@ -441,54 +460,72 @@ export default function AdminPage() {
             </select>
           </div>
 
-          <div className="space-y-8">
-            {filteredProductSections.map(({ section, products: sectionProducts }) => (
-              <div key={section.id}>
-                <div className="mb-3 flex items-center gap-2 px-1">
-                  <span className="text-lg">{section.icon ?? "📦"}</span>
-                  <h3 className="font-bold text-[#111c2d]">{section.name}</h3>
-                  <span className="text-xs text-[#424754] bg-[#e7eeff] px-2 py-0.5 rounded-full">
-                    {sectionProducts.length} items
-                  </span>
-                </div>
+          <div className="space-y-3">
+            {filteredProductSections.map(({ section, products: sectionProducts }) => {
+              const isExpanded = searchMatchedSectionIds
+                ? searchMatchedSectionIds.has(section.id)
+                : expandedProductCategories.has(section.id);
+              return (
+                <div key={section.id} className="rounded-2xl bg-white shadow-sm border border-[#c2c6d6]/40 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => toggleProductCategory(section.id)}
+                    className="w-full flex items-center gap-2 px-4 py-4 text-left transition hover:bg-[#f0f3ff]/60"
+                  >
+                    <span className="text-lg">{section.icon ?? "📦"}</span>
+                    <h3 className="font-bold text-[#111c2d]">{section.name}</h3>
+                    <span className="text-xs text-[#424754] bg-[#e7eeff] px-2 py-0.5 rounded-full">
+                      {sectionProducts.length} items
+                    </span>
+                    <span
+                      className={`ml-auto text-xl text-[#727785] transition-transform duration-200 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    >
+                      ▾
+                    </span>
+                  </button>
 
-                {sectionProducts.length === 0 ? (
-                  <p className="px-1 text-sm text-[#424754]">No products in this category.</p>
-                ) : (
-                  <div className="rounded-2xl bg-white shadow-sm border border-[#c2c6d6]/40 divide-y divide-[#c2c6d6]/30 overflow-hidden">
-                    {sectionProducts.map((product) => {
-                      const firstVariant = variants.find((v) => v.product_id === product.id);
-                      return (
-                        <button
-                          key={product.id}
-                          type="button"
-                          onClick={() => openEditProduct(product)}
-                          className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-[#f0f3ff]/60"
-                        >
-                          <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#e7eeff] flex items-center justify-center">
-                            {firstVariant?.image_url ? (
-                              <img src={firstVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
-                            ) : (
-                              <span className="text-xl">📦</span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-[#111c2d] truncate">{product.name}</p>
-                            {brandNameFor(product.brand_id) && (
-                              <span className="inline-block mt-1 rounded-full bg-[#d5e4f8] px-2.5 py-0.5 text-xs font-semibold text-[#576676]">
-                                {brandNameFor(product.brand_id)}
-                              </span>
-                            )}
-                          </div>
-                          <p className="shrink-0 font-bold text-[#111c2d]">{priceRangeFor(product.id)}</p>
-                          <span className="shrink-0 text-[#727785]">✎</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {isExpanded && (
+                    <div className="border-t border-[#c2c6d6]/30 divide-y divide-[#c2c6d6]/30">
+                      {sectionProducts.length === 0 ? (
+                        <p className="px-4 py-4 text-sm text-[#424754]">No products in this category.</p>
+                      ) : (
+                        sectionProducts.map((product) => {
+                          const firstVariant = variants.find((v) => v.product_id === product.id);
+                          return (
+                            <button
+                              key={product.id}
+                              type="button"
+                              onClick={() => openEditProduct(product)}
+                              className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-[#f0f3ff]/60"
+                            >
+                              <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#e7eeff] flex items-center justify-center">
+                                {firstVariant?.image_url ? (
+                                  <img src={firstVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className="text-xl">📦</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-[#111c2d] truncate">{product.name}</p>
+                                {brandNameFor(product.brand_id) && (
+                                  <span className="inline-block mt-1 rounded-full bg-[#d5e4f8] px-2.5 py-0.5 text-xs font-semibold text-[#576676]">
+                                    {brandNameFor(product.brand_id)}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="shrink-0 font-bold text-[#111c2d]">{priceRangeFor(product.id)}</p>
+                              <span className="shrink-0 text-[#727785]">✎</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>

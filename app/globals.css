@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e5f5fa;
-  --foreground: #1f2937;
+  --background: #f8f9fd;
+  --foreground: #111827;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-kiosk-lighter: #e5f5fa;
-  --color-kiosk-light: #e0f2fc;
-  --color-kiosk-muted: #c6def6;
-  --color-kiosk-accent: #7ebada;
-  --color-kiosk-primary: #5081be;
+  --color-kiosk-canvas: #f8f9fd;
+  --color-kiosk-lighter: #e8ecf9;
+  --color-kiosk-light: #dbe4fb;
+  --color-kiosk-muted: #c7d2e8;
+  --color-kiosk-accent: #5b6b8c;
+  --color-kiosk-primary: #1d4fd8;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -41,15 +42,15 @@ html, body {
 /* Micro-interaction utilities */
 @layer utilities {
   .card-shadow {
-    box-shadow: 0 4px 12px rgba(80, 129, 190, 0.08);
+    box-shadow: 0 4px 12px rgba(29, 79, 216, 0.08);
   }
 
   .card-shadow-lg {
-    box-shadow: 0 8px 24px rgba(80, 129, 190, 0.12);
+    box-shadow: 0 8px 24px rgba(29, 79, 216, 0.12);
   }
 
   .card-shadow-xl {
-    box-shadow: 0 12px 32px rgba(80, 129, 190, 0.15);
+    box-shadow: 0 12px 32px rgba(29, 79, 216, 0.15);
   }
 
   .smooth-transition {
@@ -66,6 +67,6 @@ html, body {
 
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(80, 129, 190, 0.12);
+    box-shadow: 0 8px 24px rgba(29, 79, 216, 0.12);
   }
 }

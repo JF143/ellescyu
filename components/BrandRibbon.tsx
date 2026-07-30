@@ -57,7 +57,7 @@ export function BrandRibbon({ brands, selectedBrand, onSelectBrand }: BrandRibbo
         className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold smooth-transition tap-scale ${
           selectedBrand === null
             ? "bg-kiosk-primary text-white card-shadow-lg"
-            : "bg-white text-kiosk-primary border border-kiosk-muted hover:bg-kiosk-light"
+            : "bg-white text-kiosk-primary card-shadow hover:bg-kiosk-light"
         }`}
       >
         All Brands
@@ -70,7 +70,7 @@ export function BrandRibbon({ brands, selectedBrand, onSelectBrand }: BrandRibbo
           className={`flex-shrink-0 whitespace-nowrap rounded-full px-6 py-3 text-base font-bold smooth-transition tap-scale ${
             selectedBrand === b
               ? "bg-kiosk-primary text-white card-shadow-lg"
-              : "bg-white text-kiosk-primary border border-kiosk-muted hover:bg-kiosk-light"
+              : "bg-white text-kiosk-primary card-shadow hover:bg-kiosk-light"
           }`}
         >
           {b}

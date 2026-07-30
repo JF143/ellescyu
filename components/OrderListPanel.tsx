@@ -124,7 +124,7 @@ export function OrderListPanel() {
     <>
       <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 backdrop-blur border-b-2 border-kiosk-muted px-6 py-5">
         <div>
-          <h2 className="text-2xl font-bold text-kiosk-primary">Order Details</h2>
+          <h2 className="text-2xl font-bold text-foreground">Order Details</h2>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-2">
             {stage === "cart"
               ? `${cartCount} ${cartCount === 1 ? "item" : "items"}`
@@ -166,7 +166,7 @@ export function OrderListPanel() {
           <ul className={`flex-1 min-h-0 divide-y divide-kiosk-muted overflow-y-auto px-6 py-4 ${SCROLL_HIDDEN}`}>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-center">
-                <p className="text-5xl mb-3">📝</p>
+                <img src="/pochaco-removebg-preview.png" alt="" className="h-20 w-20" />
                 <p className="text-gray-700 font-semibold text-lg mb-1">No items ordered yet</p>
                 <p className="text-sm text-gray-500">Add items to get started</p>
               </div>
@@ -235,9 +235,12 @@ export function OrderListPanel() {
               type="button"
               onClick={handleStartPayment}
               disabled={cartCount === 0}
-              className="w-full rounded-[14px] bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-4 px-6 text-lg font-bold text-white card-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed smooth-transition tap-scale min-h-14 touch-manipulation hover:shadow-[0_12px_32px_rgba(80,129,190,0.15)]"
+              className="w-full flex items-center justify-center gap-3 rounded-[14px] bg-kiosk-primary py-4 px-6 text-lg font-bold text-white card-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed smooth-transition tap-scale min-h-14 touch-manipulation hover:brightness-110"
             >
               {cartCount === 0 ? "Add Items" : `Charge ${formatCurrency(cartTotal)}`}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
             </button>
           </div>
         </>
@@ -288,7 +291,7 @@ export function OrderListPanel() {
               type="button"
               onClick={handleConfirmPayment}
               disabled={!isSufficient}
-              className="flex-1 rounded-[14px] bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-4 text-lg font-bold text-white card-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed smooth-transition tap-scale"
+              className="flex-1 rounded-[14px] bg-kiosk-primary py-4 text-lg font-bold text-white card-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed smooth-transition tap-scale hover:brightness-110"
             >
               Confirm
             </button>
@@ -348,7 +351,7 @@ export function OrderListPanel() {
             <button
               type="button"
               onClick={handleNewOrder}
-              className="w-full rounded-[14px] bg-gradient-to-r from-kiosk-primary to-kiosk-accent py-4 px-6 text-lg font-bold text-white card-shadow-lg smooth-transition tap-scale min-h-14 touch-manipulation mt-4 hover:shadow-[0_12px_32px_rgba(80,129,190,0.15)]"
+              className="w-full rounded-[14px] bg-kiosk-primary py-4 px-6 text-lg font-bold text-white card-shadow-lg smooth-transition tap-scale min-h-14 touch-manipulation mt-4 hover:brightness-110"
             >
               Start Next Order
             </button>
