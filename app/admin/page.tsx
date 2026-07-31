@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { useProducts } from "@/hooks/useProducts";
 import { useSections } from "@/hooks/useSections";
 import { useVariants } from "@/hooks/useVariants";
@@ -19,6 +20,14 @@ type PendingDelete =
   | { type: "product"; id: string; name: string }
   | { type: "variant"; id: string; name: string };
 
+type NewVariantRow = {
+  key: string;
+  label: string;
+  price: string;
+  imageFile: File | null;
+  imagePreview: string | null;
+};
+
 const inputClass =
   "w-full rounded-xl border-2 border-kiosk-muted px-4 py-3 text-base outline-none focus:border-kiosk-primary transition bg-kiosk-canvas";
 const labelClass = "mb-2 block text-sm font-semibold text-kiosk-accent";
@@ -26,8 +35,7 @@ const labelClass = "mb-2 block text-sm font-semibold text-kiosk-accent";
 export default function AdminPage() {
   const { sections, addSection, updateSection, deleteSection } = useSections();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
-  const { variants, addVariant, updateVariant, deleteVariant } = useVariants();
-  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
+  const { variants, addVariant, updateVariant, deleteVariant, fetchVariants } = useVariants();  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
 
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
@@ -67,10 +75,15 @@ export default function AdminPage() {
   const [productFormBrandId, setProductFormBrandId] = useState("");
   const [savingProduct, setSavingProduct] = useState(false);
 
-  const [firstVariantLabel, setFirstVariantLabel] = useState("");
-  const [firstVariantPrice, setFirstVariantPrice] = useState("");
-  const [firstVariantImageFile, setFirstVariantImageFile] = useState<File | null>(null);
-  const [firstVariantImagePreview, setFirstVariantImagePreview] = useState<string | null>(null);
+  const makeEmptyVariantRow = (): NewVariantRow => ({
+    key: uuidv4(),
+    label: "",
+    price: "",
+    imageFile: null,
+    imagePreview: null,
+  });
+
+  const [newProductVariants, setNewProductVariants] = useState<NewVariantRow[]>([makeEmptyVariantRow()]);
 
   const [newVariantLabel, setNewVariantLabel] = useState("");
   const [newVariantPrice, setNewVariantPrice] = useState("");
@@ -151,14 +164,23 @@ export default function AdminPage() {
   };
 
   const resetProductVariantForms = () => {
-    setFirstVariantLabel("");
-    setFirstVariantPrice("");
-    setFirstVariantImageFile(null);
-    setFirstVariantImagePreview(null);
+    setNewProductVariants([makeEmptyVariantRow()]);
     setNewVariantLabel("");
     setNewVariantPrice("");
     setNewVariantImageFile(null);
     setNewVariantImagePreview(null);
+  };
+
+  const addNewProductVariantRow = () => {
+    setNewProductVariants((prev) => [...prev, makeEmptyVariantRow()]);
+  };
+
+  const removeNewProductVariantRow = (key: string) => {
+    setNewProductVariants((prev) => (prev.length <= 1 ? prev : prev.filter((row) => row.key !== key)));
+  };
+
+  const updateNewProductVariantRow = (key: string, updates: Partial<NewVariantRow>) => {
+    setNewProductVariants((prev) => prev.map((row) => (row.key === key ? { ...row, ...updates } : row)));
   };
 
   const openAddProduct = (sectionId?: string) => {
@@ -191,27 +213,36 @@ export default function AdminPage() {
         });
         showToast("Product updated");
       } else {
-        if (!firstVariantLabel.trim() || !firstVariantPrice.trim()) {
+        const validRows = newProductVariants.filter((row) => row.label.trim() && row.price.trim());
+        if (validRows.length === 0) {
           showToast("Add at least one variant label and price");
           setSavingProduct(false);
           return;
         }
-        const price = Number(firstVariantPrice);
-        if (Number.isNaN(price) || price < 0) {
-          setSavingProduct(false);
-          return;
+
+        const parsedRows: { label: string; price: number; image_url?: string }[] = [];
+        for (const row of validRows) {
+          const price = Number(row.price);
+          if (Number.isNaN(price) || price < 0) {
+            showToast(`Invalid price for "${row.label.trim()}"`);
+            setSavingProduct(false);
+            return;
+          }
+          let imageUrl: string | undefined;
+          if (row.imageFile) {
+            imageUrl = await uploadProductImage(row.imageFile);
+          }
+          parsedRows.push({ label: row.label.trim(), price, image_url: imageUrl });
         }
-        let imageUrl: string | undefined;
-        if (firstVariantImageFile) {
-          imageUrl = await uploadProductImage(firstVariantImageFile);
-        }
+
         await addProduct(
           productFormSectionId,
           productFormName.trim(),
-          [{ label: firstVariantLabel.trim(), price, image_url: imageUrl }],
+          parsedRows,
           productFormBrandId || undefined,
         );
-        showToast("Product added successfully");
+        await fetchVariants();
+        showToast(`Product added with ${parsedRows.length} variant${parsedRows.length === 1 ? "" : "s"}`);
       }
       setProductDrawerOpen(false);
     } catch (error) {
@@ -726,45 +757,72 @@ export default function AdminPage() {
         </div>
 
         {!editingProduct && (
-          <div className="rounded-2xl border-2 border-dashed border-kiosk-muted p-4 space-y-4">
-            <p className="text-sm font-semibold text-kiosk-accent">First Variant</p>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={firstVariantLabel}
-                onChange={(event) => setFirstVariantLabel(event.target.value)}
-                className={inputClass}
-                placeholder="Label (e.g. Single)"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={firstVariantPrice}
-                onChange={(event) => setFirstVariantPrice(event.target.value)}
-                className={inputClass}
-                placeholder="Price"
-              />
-            </div>
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  setFirstVariantImageFile(file);
-                  setFirstVariantImagePreview(file ? URL.createObjectURL(file) : null);
-                }}
-                className="w-full text-sm"
-              />
-              {firstVariantImagePreview && (
-                <img
-                  src={firstVariantImagePreview}
-                  alt="Preview"
-                  className="mt-2 h-20 w-20 rounded-xl object-cover border border-kiosk-muted"
-                />
-              )}
-            </label>
+          <div className="space-y-3">
+            {newProductVariants.map((row, index) => (
+              <div key={row.key} className="rounded-2xl border-2 border-dashed border-kiosk-muted p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-kiosk-accent">
+                    {index === 0 ? "Variant" : `Variant ${index + 1}`}
+                  </p>
+                  {newProductVariants.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeNewProductVariantRow(row.key)}
+                      className="text-xs font-semibold text-red-600 hover:opacity-80"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    value={row.label}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { label: event.target.value })}
+                    className={inputClass}
+                    placeholder="Label (e.g. Single)"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={row.price}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { price: event.target.value })}
+                    className={inputClass}
+                    placeholder="Price"
+                  />
+                </div>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      updateNewProductVariantRow(row.key, {
+                        imageFile: file,
+                        imagePreview: file ? URL.createObjectURL(file) : null,
+                      });
+                    }}
+                    className="w-full text-sm"
+                  />
+                  {row.imagePreview && (
+                    <img
+                      src={row.imagePreview}
+                      alt="Preview"
+                      className="mt-2 h-20 w-20 rounded-xl object-cover border border-kiosk-muted"
+                    />
+                  )}
+                </label>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addNewProductVariantRow}
+              className="w-full h-11 rounded-xl border-2 border-dashed border-kiosk-muted text-kiosk-primary font-bold text-sm transition hover:bg-kiosk-lighter"
+            >
+              + Add Another Variant
+            </button>
           </div>
         )}
 
