@@ -31,6 +31,7 @@ export default function AdminPage() {
   const { showToast } = useToast();
 
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [resumeDrawer, setResumeDrawer] = useState<(() => void) | null>(null);
 
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
@@ -275,6 +276,7 @@ export default function AdminPage() {
       showToast(`Failed to delete ${pendingDelete.type}`);
     } finally {
       setPendingDelete(null);
+      setResumeDrawer(null);
     }
   };
 
@@ -328,8 +330,7 @@ export default function AdminPage() {
   const brandNameFor = (brandId?: string | null) => brands.find((b) => b.id === brandId)?.name;
 
   return (
-    <div className="h-screen overflow-y-auto bg-kiosk-canvas touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch]">
-      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
+    <div className="h-dvh overflow-y-auto bg-kiosk-canvas touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch]">      <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-kiosk-primary">Admin</h1>
@@ -538,16 +539,18 @@ export default function AdminPage() {
         footer={
           <>
             {editingCategory && (
-              <button
-                type="button"
-                onClick={() =>
-                  setPendingDelete({ type: "section", id: editingCategory.id, name: editingCategory.name })
-                }
-                className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
-              >
-                Delete Category
-              </button>
-            )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryDrawerOpen(false);
+                    setResumeDrawer(() => () => setCategoryDrawerOpen(true));
+                    setPendingDelete({ type: "section", id: editingCategory.id, name: editingCategory.name });
+                  }}
+                  className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
+                >
+                  Delete Category
+                </button>
+              )}
             <button
               type="button"
               onClick={() => setCategoryDrawerOpen(false)}
@@ -596,7 +599,11 @@ export default function AdminPage() {
             {editingBrand && (
               <button
                 type="button"
-                onClick={() => setPendingDelete({ type: "brand", id: editingBrand.id, name: editingBrand.name })}
+                onClick={() => {
+                  setBrandDrawerOpen(false);
+                  setResumeDrawer(() => () => setBrandDrawerOpen(true));
+                  setPendingDelete({ type: "brand", id: editingBrand.id, name: editingBrand.name });
+                }}
                 className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
               >
                 Delete Brand
@@ -646,9 +653,11 @@ export default function AdminPage() {
             {editingProduct && (
               <button
                 type="button"
-                onClick={() =>
-                  setPendingDelete({ type: "product", id: editingProduct.id, name: editingProduct.name })
-                }
+                onClick={() => {
+                  setProductDrawerOpen(false);
+                  setResumeDrawer(() => () => setProductDrawerOpen(true));
+                  setPendingDelete({ type: "product", id: editingProduct.id, name: editingProduct.name });
+                }}
                 className="mr-auto text-sm font-semibold text-red-600 hover:opacity-80"
               >
                 Delete Product
@@ -819,13 +828,15 @@ export default function AdminPage() {
                     />
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        setProductDrawerOpen(false);
+                        setResumeDrawer(() => () => setProductDrawerOpen(true));
                         setPendingDelete({
                           type: "variant",
                           id: variant.id,
                           name: `${editingProduct.name} (${variant.label})`,
-                        })
-                      }
+                        });
+                      }}
                       className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
                     >
                       Delete
@@ -884,7 +895,7 @@ export default function AdminPage() {
         )}
       </Drawer>
 
-      <ConfirmDialog
+            <ConfirmDialog
         isOpen={!!pendingDelete}
         title={
           pendingDelete
@@ -896,7 +907,13 @@ export default function AdminPage() {
             : ""
         }
         message={getDeleteMessage()}
-        onCancel={() => setPendingDelete(null)}
+        onCancel={() => {
+          setPendingDelete(null);
+          if (resumeDrawer) {
+            resumeDrawer();
+            setResumeDrawer(null);
+          }
+        }}
         onConfirm={handleConfirmDelete}
       />
     </div>
