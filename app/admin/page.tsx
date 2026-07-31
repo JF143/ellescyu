@@ -328,7 +328,7 @@ export default function AdminPage() {
   const brandNameFor = (brandId?: string | null) => brands.find((b) => b.id === brandId)?.name;
 
   return (
-    <div className="h-screen overflow-y-auto bg-kiosk-canvas">
+    <div className="h-screen overflow-y-auto bg-kiosk-canvas touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch]">
       <header className="border-b-2 border-kiosk-muted bg-white px-4 py-4 lg:px-8 lg:py-6 shadow-sm sticky top-0 z-30">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div>

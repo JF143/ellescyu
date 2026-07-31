@@ -138,7 +138,7 @@ export default function HomePage() {
   if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-kiosk-lighter">
-        <p className="text-2xl font-semibold text-kiosk-primary">Loading menu...</p>
+        <p className="text-2xl font-semibold text-kiosk-primary">Loading products...</p>
       </div>
     );
   }
