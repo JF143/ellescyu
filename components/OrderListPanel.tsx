@@ -27,6 +27,7 @@ export function OrderListPanel() {
     clearCart,
     checkoutStage: stage,
     setCheckoutStage: setStage,
+    appReady,
   } = useCart();
   
   const [amountInput, setAmountInput] = useState("");
@@ -36,7 +37,7 @@ export function OrderListPanel() {
   const [sheetTranslate, setSheetTranslate] = useState(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  if (!mounted || pathname.startsWith("/admin")) {
+  if (!mounted || pathname.startsWith("/admin") || !appReady) {
     return null;
   }
 
@@ -165,7 +166,7 @@ export function OrderListPanel() {
         <>
           <ul className={`flex-1 min-h-0 divide-y divide-kiosk-muted overflow-y-auto px-6 py-4 ${SCROLL_HIDDEN}`}>
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
+              <div className="flex flex-col items-center justify-center h-100 text-center">
                 <img src="/pochaco-removebg-preview.png" alt="" className="h-20 w-20" />
                 <p className="text-gray-700 font-semibold text-lg mb-1">No items ordered yet</p>
                 <p className="text-sm text-gray-500">Add items to get started</p>

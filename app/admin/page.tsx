@@ -89,6 +89,7 @@ export default function AdminPage() {
   const [newVariantPrice, setNewVariantPrice] = useState("");
   const [newVariantImageFile, setNewVariantImageFile] = useState<File | null>(null);
   const [newVariantImagePreview, setNewVariantImagePreview] = useState<string | null>(null);
+  const [newVariantImageInputKey, setNewVariantImageInputKey] = useState(0);
   const [savingNewVariant, setSavingNewVariant] = useState(false);
 
   const isDuplicateError = (error: unknown) =>
@@ -169,6 +170,7 @@ export default function AdminPage() {
     setNewVariantPrice("");
     setNewVariantImageFile(null);
     setNewVariantImagePreview(null);
+    setNewVariantImageInputKey((key) => key + 1);
   };
 
   const addNewProductVariantRow = () => {
@@ -269,6 +271,7 @@ export default function AdminPage() {
       setNewVariantPrice("");
       setNewVariantImageFile(null);
       setNewVariantImagePreview(null);
+      setNewVariantImageInputKey((key) => key + 1);
       showToast("Variant added");
     } catch (error) {
       console.error("Failed to add variant:", error);
@@ -523,7 +526,9 @@ export default function AdminPage() {
                         <p className="px-4 py-4 text-sm text-kiosk-accent">No products in this category.</p>
                       ) : (
                         sectionProducts.map((product) => {
-                          const firstVariant = variants.find((v) => v.product_id === product.id);
+                          const productVariants = variants.filter((v) => v.product_id === product.id);
+                          const displayVariant =
+                            productVariants.find((v) => v.image_url) ?? productVariants[0];
                           return (
                             <button
                               key={product.id}
@@ -532,8 +537,8 @@ export default function AdminPage() {
                               className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-kiosk-lighter/60"
                             >
                               <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-kiosk-lighter flex items-center justify-center">
-                                {firstVariant?.image_url ? (
-                                  <img src={firstVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
+                                {displayVariant?.image_url ? (
+                                  <img src={displayVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
                                 ) : (
                                   <span className="text-xl">📦</span>
                                 )}
@@ -924,6 +929,7 @@ export default function AdminPage() {
                 />
               </div>
               <input
+                key={newVariantImageInputKey}
                 type="file"
                 accept="image/*"
                 onChange={(event) => {

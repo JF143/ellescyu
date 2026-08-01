@@ -25,6 +25,8 @@ type CartContextValue = {
   cartCount: number;
   checkoutStage: CheckoutStage;
   setCheckoutStage: (stage: CheckoutStage) => void;
+  appReady: boolean;
+  setAppReady: (ready: boolean) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -32,6 +34,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function KioskProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutStage, setCheckoutStage] = useState<CheckoutStage>("cart");
+  const [appReady, setAppReady] = useState(true);
 
   useEffect(() => {
     setCart(storageGet(STORAGE_KEYS.cart, []));
@@ -135,6 +138,8 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       cartCount,
       checkoutStage,
       setCheckoutStage,
+      appReady,
+      setAppReady,
     }),
     [
       cart,
@@ -146,6 +151,7 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       cartTotal,
       cartCount,
       checkoutStage,
+      appReady,
     ],
   );
 
@@ -172,6 +178,8 @@ export function useCart() {
     cartCount,
     checkoutStage,
     setCheckoutStage,
+    appReady,
+    setAppReady,
   } = useCartContext();
 
   return {
@@ -185,5 +193,7 @@ export function useCart() {
     cartCount,
     checkoutStage,
     setCheckoutStage,
+    appReady,
+    setAppReady,
   };
 }

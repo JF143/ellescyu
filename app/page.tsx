@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useMounted } from "@/hooks/useMounted";
 import { useClock } from "@/hooks/useClocks";
 import { VariantCard } from "@/components/VariantCard";
@@ -14,6 +14,7 @@ import { getBrand } from "@/lib/getBrand";
 import Link from "next/link";
 import type { Section } from "@/types";
 import { useToast } from "@/components/Toast";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 export default function HomePage() {
   const mounted = useMounted();
@@ -99,6 +100,12 @@ export default function HomePage() {
     }
   };
 
+  const [minLoadTimeElapsed, setMinLoadTimeElapsed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadTimeElapsed(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const renderCategoryButtons = () => (
     <>
       <button
@@ -135,12 +142,8 @@ export default function HomePage() {
     </>
   );
 
-  if (!mounted || isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-kiosk-lighter">
-        <p className="text-2xl font-semibold text-kiosk-primary">Loading products...</p>
-      </div>
-    );
+  if (!mounted || isLoading || !minLoadTimeElapsed) {
+    return <LoadingScreen />;
   }
 
   if (error) {
