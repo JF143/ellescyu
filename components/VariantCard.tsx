@@ -29,7 +29,7 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
             <img
               src={variant.image_url}
               alt={`${productName} - ${variant.label}`}
-              className="h-32 w-32 rounded-[14px] object-cover"
+              className="h-40 w-40 rounded-[14px] object-contain"
             />
           ) : (
             <div className="flex h-32 w-32 items-center justify-center rounded-[14px] bg-white text-4xl">
