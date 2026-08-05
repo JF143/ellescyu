@@ -52,11 +52,22 @@ export function useInvoices() {
     if (error) throw error;
   }, []);
 
+  const updateInvoiceCustomerName = useCallback(async (id: string, customerName: string) => {
+    const { error } = await supabase
+      .from("invoices")
+      .update({ customer_name: customerName.trim() || null })
+      .eq("id", id);
+
+    if (error) throw error;
+    await fetchInvoices();
+  }, [fetchInvoices]);
+
   return {
     invoices,
     isLoading,
     error,
     fetchInvoices,
     addInvoice,
+    updateInvoiceCustomerName,
   };
 }

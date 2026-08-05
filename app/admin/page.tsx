@@ -13,6 +13,7 @@ import { Drawer } from "@/components/Drawer";
 import { uploadProductImage } from "@/lib/uploadImage";
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { Product, Section, Brand } from "@/types";
+import { useInvoices } from "@/hooks/useInvoices";
 
 type PendingDelete =
   | { type: "brand"; id: string; name: string }
@@ -37,9 +38,11 @@ export default function AdminPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const { variants, addVariant, updateVariant, deleteVariant, fetchVariants } = useVariants();  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
+  const { invoices, isLoading: invoicesLoading, updateInvoiceCustomerName } = useInvoices();
 
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [resumeDrawer, setResumeDrawer] = useState<(() => void) | null>(null);
+  const [activeTab, setActiveTab] = useState<"categories" | "brands" | "products" | "invoices">("categories");
 
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
@@ -379,191 +382,323 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-10 space-y-10">
-        {/* ===== Categories ===== */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg lg:text-xl font-bold text-foreground">Categories</h2>
-            <button
-              type="button"
-              onClick={openAddCategory}
-              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
-            >
-              + Add Category
-            </button>
-          </div>
-
-          {sections.length === 0 ? (
-            <p className="text-kiosk-accent">No categories yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => openEditCategory(section)}
-                  className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted text-left transition hover:shadow-md hover:-translate-y-0.5"
-                >
-                  <span className="text-2xl">{section.icon ?? "📦"}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-foreground truncate">{section.name}</p>
-                    <p className="text-xs text-kiosk-accent">
-                      {products.filter((p) => p.section_id === section.id).length} products
-                    </p>
-                  </div>
-                  <span className="text-kiosk-accent">✎</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ===== Brands ===== */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg lg:text-xl font-bold text-foreground">Brands</h2>
-            <button
-              type="button"
-              onClick={openAddBrand}
-              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
-            >
-              + Add Brand
-            </button>
-          </div>
-
-          {brands.length === 0 ? (
-            <p className="text-kiosk-accent">No brands yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {brands.map((brand) => (
-                <button
-                  key={brand.id}
-                  type="button"
-                  onClick={() => openEditBrand(brand)}
-                  className="rounded-full bg-white border-2 border-kiosk-muted px-5 py-2.5 text-sm font-bold text-kiosk-primary shadow-sm transition hover:bg-kiosk-lighter"
-                >
-                  {brand.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ===== Products ===== */}
-        <section>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg lg:text-xl font-bold text-foreground">Products</h2>
-            <button
-              type="button"
-              onClick={() => openAddProduct()}
-              className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
-            >
-              + Add Product
-            </button>
-          </div>
-
-          <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-3 shadow-sm border border-kiosk-muted sm:flex-row">
-            <div className="relative flex-1">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-accent pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      <main className="mx-auto flex max-w-6xl gap-6 px-4 py-6 lg:px-8 lg:py-10">
+        {/* ===== Sidebar Navigation ===== */}
+        <aside className="hidden w-56 shrink-0 lg:block">
+          <nav className="sticky top-24 flex flex-col gap-1.5 rounded-2xl bg-white p-3 shadow-sm border border-kiosk-muted">
+            {[
+              { key: "categories" as const, label: "Categories", icon: "🗂️" },
+              { key: "brands" as const, label: "Brands", icon: "🏷️" },
+              { key: "products" as const, label: "Products", icon: "📦" },
+              { key: "invoices" as const, label: "Invoices", icon: "🧾" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left font-semibold transition ${
+                  activeTab === tab.key
+                    ? "bg-kiosk-primary text-white shadow"
+                    : "text-kiosk-accent hover:bg-kiosk-lighter hover:text-foreground"
+                }`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={productSearchQuery}
-                onChange={(event) => setProductSearchQuery(event.target.value)}
-                placeholder="Search products..."
-                className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
-              />
-            </div>
-            <select
-              value={productCategoryFilter}
-              onChange={(event) => setProductCategoryFilter(event.target.value)}
-              className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas sm:w-56"
+                <span className="text-lg">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* ===== Mobile tab selector ===== */}
+        <div className="lg:hidden mb-2 flex gap-2 overflow-x-auto pb-1">
+          {[
+            { key: "categories" as const, label: "Categories", icon: "🗂️" },
+            { key: "brands" as const, label: "Brands", icon: "🏷️" },
+            { key: "products" as const, label: "Products", icon: "📦" },
+            { key: "invoices" as const, label: "Invoices", icon: "🧾" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                activeTab === tab.key
+                  ? "bg-kiosk-primary text-white shadow"
+                  : "bg-white text-kiosk-accent border border-kiosk-muted"
+              }`}
             >
-              <option value="">All Categories</option>
-              {sections.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.icon ?? "📦"} {section.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-          <div className="space-y-3">
-            {filteredProductSections.map(({ section, products: sectionProducts }) => {
-              const isExpanded = searchMatchedSectionIds
-                ? searchMatchedSectionIds.has(section.id)
-                : expandedProductCategories.has(section.id);
-              return (
-                <div key={section.id} className="rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleProductCategory(section.id)}
-                    className="w-full flex items-center gap-2 px-4 py-4 text-left transition hover:bg-kiosk-lighter/60"
-                  >
-                    <span className="text-lg">{section.icon ?? "📦"}</span>
-                    <h3 className="font-bold text-foreground">{section.name}</h3>
-                    <span className="text-xs text-kiosk-accent bg-kiosk-lighter px-2 py-0.5 rounded-full">
-                      {sectionProducts.length} items
-                    </span>
-                    <span
-                      className={`ml-auto text-xl text-kiosk-accent transition-transform duration-200 ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
+        {/* ===== Content ===== */}
+        <div className="min-w-0 flex-1">
+          {activeTab === "categories" && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg lg:text-xl font-bold text-foreground">Categories</h2>
+                <button
+                  type="button"
+                  onClick={openAddCategory}
+                  className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+                >
+                  + Add Category
+                </button>
+              </div>
+
+              {sections.length === 0 ? (
+                <p className="text-kiosk-accent">No categories yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => openEditCategory(section)}
+                      className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted text-left transition hover:shadow-md hover:-translate-y-0.5"
                     >
-                      ▾
-                    </span>
-                  </button>
+                      <span className="text-2xl">{section.icon ?? "📦"}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-foreground truncate">{section.name}</p>
+                        <p className="text-xs text-kiosk-accent">
+                          {products.filter((p) => p.section_id === section.id).length} products
+                        </p>
+                      </div>
+                      <span className="text-kiosk-accent">✎</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
-                  {isExpanded && (
-                    <div className="border-t border-kiosk-muted divide-y divide-kiosk-muted">
-                      {sectionProducts.length === 0 ? (
-                        <p className="px-4 py-4 text-sm text-kiosk-accent">No products in this category.</p>
-                      ) : (
-                        sectionProducts.map((product) => {
-                          const productVariants = variants.filter((v) => v.product_id === product.id);
-                          const displayVariant =
-                            productVariants.find((v) => v.image_url) ?? productVariants[0];
-                          return (
-                            <button
-                              key={product.id}
-                              type="button"
-                              onClick={() => openEditProduct(product)}
-                              className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-kiosk-lighter/60"
-                            >
-                              <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-kiosk-lighter flex items-center justify-center">
-                                {displayVariant?.image_url ? (
-                                  <img src={displayVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
-                                ) : (
-                                  <span className="text-xl">📦</span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-foreground truncate">{product.name}</p>
-                                {brandNameFor(product.brand_id) && (
-                                  <span className="inline-block mt-1 rounded-full bg-kiosk-lighter px-2.5 py-0.5 text-xs font-semibold text-kiosk-primary">
-                                    {brandNameFor(product.brand_id)}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="shrink-0 font-bold text-black">{priceRangeFor(product.id)}</p>
-                              <span className="shrink-0 text-kiosk-accent">✎</span>
-                            </button>
-                          );
-                        })
+          {activeTab === "brands" && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg lg:text-xl font-bold text-foreground">Brands</h2>
+                <button
+                  type="button"
+                  onClick={openAddBrand}
+                  className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+                >
+                  + Add Brand
+                </button>
+              </div>
+
+              {brands.length === 0 ? (
+                <p className="text-kiosk-accent">No brands yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {brands.map((brand) => (
+                    <button
+                      key={brand.id}
+                      type="button"
+                      onClick={() => openEditBrand(brand)}
+                      className="rounded-full bg-white border-2 border-kiosk-muted px-5 py-2.5 text-sm font-bold text-kiosk-primary shadow-sm transition hover:bg-kiosk-lighter"
+                    >
+                      {brand.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === "products" && (
+            <section>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg lg:text-xl font-bold text-foreground">Products</h2>
+                <button
+                  type="button"
+                  onClick={() => openAddProduct()}
+                  className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+                >
+                  + Add Product
+                </button>
+              </div>
+
+              <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-3 shadow-sm border border-kiosk-muted sm:flex-row">
+                <div className="relative flex-1">
+                  <svg
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-kiosk-accent pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={productSearchQuery}
+                    onChange={(event) => setProductSearchQuery(event.target.value)}
+                    placeholder="Search products..."
+                    className="w-full rounded-xl border-2 border-kiosk-muted pl-11 pr-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
+                  />
+                </div>
+                <select
+                  value={productCategoryFilter}
+                  onChange={(event) => setProductCategoryFilter(event.target.value)}
+                  className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas sm:w-56"
+                >
+                  <option value="">All Categories</option>
+                  {sections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.icon ?? "📦"} {section.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                {filteredProductSections.map(({ section, products: sectionProducts }) => {
+                  const isExpanded = searchMatchedSectionIds
+                    ? searchMatchedSectionIds.has(section.id)
+                    : expandedProductCategories.has(section.id);
+                  return (
+                    <div key={section.id} className="rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => toggleProductCategory(section.id)}
+                        className="w-full flex items-center gap-2 px-4 py-4 text-left transition hover:bg-kiosk-lighter/60"
+                      >
+                        <span className="text-lg">{section.icon ?? "📦"}</span>
+                        <h3 className="font-bold text-foreground">{section.name}</h3>
+                        <span className="text-xs text-kiosk-accent bg-kiosk-lighter px-2 py-0.5 rounded-full">
+                          {sectionProducts.length} items
+                        </span>
+                        <span
+                          className={`ml-auto text-xl text-kiosk-accent transition-transform duration-200 ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        >
+                          ▾
+                        </span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="border-t border-kiosk-muted divide-y divide-kiosk-muted">
+                          {sectionProducts.length === 0 ? (
+                            <p className="px-4 py-4 text-sm text-kiosk-accent">No products in this category.</p>
+                          ) : (
+                            sectionProducts.map((product) => {
+                              const productVariants = variants.filter((v) => v.product_id === product.id);
+                              const displayVariant =
+                                productVariants.find((v) => v.image_url) ?? productVariants[0];
+                              return (
+                                <button
+                                  key={product.id}
+                                  type="button"
+                                  onClick={() => openEditProduct(product)}
+                                  className="w-full flex items-center gap-4 p-4 text-left transition hover:bg-kiosk-lighter/60"
+                                >
+                                  <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-kiosk-lighter flex items-center justify-center">
+                                    {displayVariant?.image_url ? (
+                                      <img src={displayVariant.image_url} alt={product.name} className="h-full w-full object-cover" />
+                                    ) : (
+                                      <span className="text-xl">📦</span>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-foreground truncate">{product.name}</p>
+                                    {brandNameFor(product.brand_id) && (
+                                      <span className="inline-block mt-1 rounded-full bg-kiosk-lighter px-2.5 py-0.5 text-xs font-semibold text-kiosk-primary">
+                                        {brandNameFor(product.brand_id)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="shrink-0 font-bold text-black">{priceRangeFor(product.id)}</p>
+                                  <span className="shrink-0 text-kiosk-accent">✎</span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "invoices" && (
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg lg:text-xl font-bold text-foreground">Invoices</h2>
+                <span className="text-xs font-semibold text-kiosk-accent bg-kiosk-lighter px-3 py-1.5 rounded-full">
+                  {invoices.length} recorded
+                </span>
+              </div>
+
+              {invoicesLoading ? (
+                <p className="text-kiosk-accent">Loading invoices...</p>
+              ) : invoices.length === 0 ? (
+                <p className="text-kiosk-accent">No invoices recorded yet. They're created automatically when a payment is confirmed at checkout.</p>
+              ) : (
+                <div className="space-y-3">
+                  {invoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted"
+                    >
+                      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <input
+                            defaultValue={invoice.customer_name ?? ""}
+                            placeholder="Walk-in customer"
+                            onBlur={(e) => {
+                              const name = e.target.value.trim();
+                              if (name !== (invoice.customer_name ?? "")) {
+                                updateInvoiceCustomerName(invoice.id, name);
+                              }
+                            }}
+                            className="font-bold text-foreground bg-transparent outline-none focus:underline decoration-dashed underline-offset-4 w-full"
+                          />
+                          <p className="text-xs text-kiosk-accent">
+                            {invoice.created_at
+                              ? new Date(invoice.created_at).toLocaleString([], {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })
+                              : ""}
+                          </p>
+                        </div>
+                        <span className="text-xs font-semibold text-kiosk-accent bg-kiosk-lighter px-2.5 py-1 rounded-full">
+                          {invoice.item_count} {invoice.item_count === 1 ? "item" : "items"}
+                        </span>
+                      </div>
+
+                      <div className="mb-3 space-y-1.5 border-t border-dashed border-kiosk-muted pt-3">
+                        {invoice.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">
+                              {item.quantity}x {item.product_name}
+                              <span className="text-kiosk-accent"> ({item.variant_label})</span>
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {formatCurrency(item.price * item.quantity)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-kiosk-muted pt-3 text-sm">
+                        <span className="text-kiosk-accent">
+                          Cash {formatCurrency(invoice.cash_received)} · Change {formatCurrency(invoice.change_due)}
+                        </span>
+                        <span className="text-lg font-bold text-kiosk-primary">
+                          {formatCurrency(invoice.subtotal)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </section>
+              )}
+            </section>
+          )}
+        </div>
       </main>
 
       {/* ===== Category Drawer ===== */}
