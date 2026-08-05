@@ -42,3 +42,21 @@ export type KioskData = {
   products: Product[];
   variants: Variant[];
 };
+
+export type InvoiceItem = {
+  product_name: string;
+  variant_label: string;
+  price: number;
+  quantity: number;
+};
+
+export type Invoice = {
+  id: string;
+  customer_name?: string | null;
+  items: InvoiceItem[];
+  item_count: number;
+  subtotal: number;
+  cash_received: number;
+  change_due: number;
+  created_at?: string;
+};

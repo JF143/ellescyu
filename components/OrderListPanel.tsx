@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 import { useMounted } from "@/hooks/useMounted";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useToast } from "@/components/Toast";
 import { formatCurrency } from "@/lib/formatCurrency";
-
 
 const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
 
@@ -29,13 +30,39 @@ export function OrderListPanel() {
     setCheckoutStage: setStage,
     appReady,
   } = useCart();
-  
+  const { addInvoice } = useInvoices();
+  const { showToast } = useToast();
+
   const [amountInput, setAmountInput] = useState("");
   const [changeDue, setChangeDue] = useState(0);
+  const [customerName, setCustomerName] = useState("");
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [sheetTranslate, setSheetTranslate] = useState(0);
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  const confettiParticles = useMemo(() => {
+    if (stage !== "change") return [];
+    const colors = ["#1d4fd8", "#5b6b8c", "#4caf50", "#81c784"];
+    return Array.from({ length: 24 }).map((_, i) => {
+      const tx = (Math.random() - 0.5) * 200;
+      const ty = 300 + Math.random() * 300;
+      const duration = 1.5 + Math.random() * 2;
+      const delay = Math.random() * 0.5;
+      return {
+        id: i,
+        style: {
+          left: `${15 + Math.random() * 70}%`,
+          backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+          "--tx": `${tx}px`,
+          "--ty": `${ty}px`,
+          "--rot": `${Math.random() * 720}deg`,
+          "--duration": `${duration}s`,
+          "--delay": `${delay}s`,
+        } as React.CSSProperties,
+      };
+    });
+  }, [stage]);
 
   if (!mounted || pathname.startsWith("/admin") || !appReady) {
     return null;
@@ -60,17 +87,38 @@ export function OrderListPanel() {
     setMobileExpanded(true);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (!isSufficient) return;
-    setChangeDue(amountEntered - cartTotal);
+    const change = amountEntered - cartTotal;
+    setChangeDue(change);
     setStage("change");
     setMobileExpanded(true);
+
+    try {
+      await addInvoice({
+        customerName,
+        items: cart.map((item) => ({
+          product_name: item.productName,
+          variant_label: item.variantLabel,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        itemCount: cartCount,
+        subtotal: cartTotal,
+        cashReceived: amountEntered,
+        changeDue: change,
+      });
+    } catch (error) {
+      console.error("Failed to save invoice:", error);
+      showToast("Sale completed, but the invoice failed to save");
+    }
   };
 
   const handleNewOrder = () => {
     clearCart();
     setAmountInput("");
     setChangeDue(0);
+    setCustomerName("");
     setStage("cart");
     setMobileExpanded(false);
   };
@@ -84,7 +132,7 @@ export function OrderListPanel() {
     if (!sheetRef.current) return;
     const touchCurrentY = e.touches[0].clientY;
     const diff = touchStartY - touchCurrentY;
-    
+
     // Only allow dragging upwards when sheet is collapsed
     if (!mobileExpanded && diff > 0 && diff < 400) {
       setSheetTranslate(-diff);
@@ -261,6 +309,19 @@ export function OrderListPanel() {
             </p>
           </div>
 
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Customer Name (Optional)
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Walk-in customer"
+              className="w-full rounded-[12px] border border-kiosk-muted bg-white px-4 py-3 text-sm font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-kiosk-primary transition"
+            />
+          </div>
+
           {amountInput && !isSufficient && (
             <p className="mb-4 text-center text-sm font-semibold text-red-600 bg-red-50 rounded-[12px] py-2 px-3">
               Insufficient — needs {formatCurrency(cartTotal - amountEntered)} more
@@ -301,62 +362,78 @@ export function OrderListPanel() {
       )}
 
       {stage === "change" && (
-        <div className="flex flex-1 min-h-0 flex-col px-6 py-6">
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="grid grid-cols-[auto_1fr_auto] gap-x-3 pb-3 border-b-2 border-dashed border-kiosk-muted text-xs font-bold uppercase tracking-wide text-gray-600 mb-2">
-              <span>Qty</span>
-              <span>Item</span>
-              <span className="text-right">Price</span>
-            </div>
-
-            <ul className={`flex-1 min-h-0 overflow-y-auto divide-y divide-dashed divide-kiosk-muted ${SCROLL_HIDDEN}`}>
-              {cart.map((item) => (
-                <li key={item.variantId} className="grid grid-cols-[auto_1fr_auto] gap-x-3 py-2.5">
-                  <span className="text-sm font-bold text-gray-900 pt-0.5">{item.quantity}x</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{item.productName}</p>
-                    <p className="text-xs text-gray-500">{item.variantLabel}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 text-right">
-                    {formatCurrency(item.price * item.quantity)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+        <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto px-6 py-6">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {confettiParticles.map((particle) => (
+              <span key={particle.id} className="receipt-confetti-particle" style={particle.style} />
+            ))}
           </div>
 
-          <p className="my-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">
-            {cartCount} {cartCount === 1 ? "item" : "items"} Sold
-          </p>
-
-          <div className="border-t-2 border-dashed border-kiosk-muted pt-4 space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <p className="text-sm font-semibold text-gray-600">Total</p>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(cartTotal)}</p>
+          <div className="relative z-10 mx-auto w-full max-w-sm receipt-slide-up">
+            {/* Torn receipt top edge */}
+            <div aria-hidden="true" className="absolute -top-2 left-0 right-0 z-10 flex h-4 justify-between overflow-hidden px-6">
+              <div className="h-6 w-2 rounded-full bg-kiosk-lighter" />
+              <div className="h-6 w-2 rounded-full bg-kiosk-lighter" />
+              <div className="h-6 w-2 rounded-full bg-kiosk-lighter" />
+              <div className="h-6 w-2 rounded-full bg-kiosk-lighter" />
+              <div className="h-6 w-2 rounded-full bg-kiosk-lighter" />
             </div>
 
-            <div className="border-t border-kiosk-muted" />
-
-            <div className="flex items-center justify-between py-2">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Cash</p>
-              <p className="text-base font-bold text-gray-900">{formatCurrency(amountEntered)}</p>
-            </div>
-
-            <div className="border-t-2 border-dashed border-kiosk-muted my-3" />
-
-            <div className="flex items-center justify-between py-3 rounded-[14px] bg-green-50 px-4">
-              <p className="text-sm font-bold text-gray-700">Change</p>
-              <p className="text-3xl font-bold text-green-600">{formatCurrency(changeDue)}</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleNewOrder}
-              className="w-full rounded-[14px] bg-kiosk-primary py-4 px-6 text-lg font-bold text-white card-shadow-lg smooth-transition tap-scale min-h-14 touch-manipulation mt-4 hover:brightness-110"
+            <div
+              className="relative bg-white px-6 pb-8 pt-10 card-shadow-xl"
+              style={{
+                clipPath:
+                  "polygon(0 0, 100% 0, 100% calc(100% - 10px), 95% 100%, 90% calc(100% - 10px), 85% 100%, 80% calc(100% - 10px), 75% 100%, 70% calc(100% - 10px), 65% 100%, 60% calc(100% - 10px), 55% 100%, 50% calc(100% - 10px), 45% 100%, 40% calc(100% - 10px), 35% 100%, 30% calc(100% - 10px), 25% 100%, 20% calc(100% - 10px), 15% 100%, 10% calc(100% - 10px), 5% 100%, 0 calc(100% - 10px))",
+              }}
             >
-              Start Next Order
-            </button>
+              <div className="mb-6 flex flex-col items-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-kiosk-light text-kiosk-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-foreground text-center">Payment Successful</h2>
+                <p className="mt-1 text-center text-sm text-gray-500">
+                  {cartCount} {cartCount === 1 ? "item" : "items"} sold
+                </p>
+                {customerName.trim() && (
+                  <p className="mt-1 text-center text-sm font-semibold text-kiosk-primary">
+                    {customerName.trim()}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-5 border-t-2 border-dashed border-kiosk-muted" />
+
+              <div className="mb-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-600">Total Amount</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(cartTotal)}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-600">Cash Received</p>
+                  <p className="text-base font-semibold text-gray-900">{formatCurrency(amountEntered)}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-xl bg-green-50 p-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-green-700">Change Due</p>
+                <p className="text-4xl font-bold text-green-800">{formatCurrency(changeDue)}</p>
+              </div>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleNewOrder}
+            className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-[14px] bg-kiosk-primary px-6 py-4 text-lg font-bold text-white card-shadow-lg smooth-transition tap-scale touch-manipulation hover:brightness-110"
+          >
+            Start Next Order
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
         </div>
       )}
     </>
