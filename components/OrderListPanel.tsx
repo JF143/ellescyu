@@ -1,11 +1,7 @@
 "use client";
 
-<<<<<<< Updated upstream
 import { useState, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
-=======
-import { useState, useRef, useMemo } from "react";import { usePathname } from "next/navigation";
->>>>>>> Stashed changes
 import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 import { useMounted } from "@/hooks/useMounted";
@@ -367,15 +363,12 @@ export function OrderListPanel() {
 
       {stage === "change" && (
         <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto px-6 py-6">
-<<<<<<< Updated upstream
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {confettiParticles.map((particle) => (
               <span key={particle.id} className="receipt-confetti-particle" style={particle.style} />
             ))}
           </div>
 
-=======
->>>>>>> Stashed changes
           <div className="relative z-10 mx-auto w-full max-w-sm receipt-slide-up">
             {/* Torn receipt top edge */}
             <div aria-hidden="true" className="absolute -top-2 left-0 right-0 z-10 flex h-4 justify-between overflow-hidden px-6">
@@ -404,14 +397,11 @@ export function OrderListPanel() {
                 <p className="mt-1 text-center text-sm text-gray-500">
                   {cartCount} {cartCount === 1 ? "item" : "items"} sold
                 </p>
-<<<<<<< Updated upstream
                 {customerName.trim() && (
                   <p className="mt-1 text-center text-sm font-semibold text-kiosk-primary">
                     {customerName.trim()}
                   </p>
                 )}
-=======
->>>>>>> Stashed changes
               </div>
 
               <div className="mb-5 border-t-2 border-dashed border-kiosk-muted" />
