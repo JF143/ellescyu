@@ -33,12 +33,18 @@ export function useProducts() {
   }, [fetchProducts]);
 
   const addProduct = useCallback(
-    async (
-      sectionId: string,
-      name: string,
-      variantRows: Array<{ label: string; price: number; image_url?: string }>,
-      brandId?: string,
-    ) => {
+  async (
+    sectionId: string,
+    name: string,
+    variantRows: Array<{
+      label: string;
+      price: number;
+      retail_price?: number;
+      wholesale_price?: number;
+      image_url?: string;
+    }>,
+    brandId?: string,
+  ) => {
       try {
         const product: Product = {
           id: uuidv4(),
@@ -57,6 +63,8 @@ export function useProducts() {
           product_id: product.id,
           label: row.label,
           price: row.price,
+          retail_price: row.retail_price ?? null,
+          wholesale_price: row.wholesale_price ?? null,
           image_url: row.image_url || null,
         }));
 

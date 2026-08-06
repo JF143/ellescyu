@@ -57,7 +57,7 @@ export function useVariants() {
   );
 
   const updateVariant = useCallback(
-    async (id: string, updates: Partial<Pick<Variant, "label" | "price" | "image_url">>) => {
+  async (id: string, updates: Partial<Pick<Variant, "label" | "price" | "retail_price" | "wholesale_price" | "image_url">>) => {
       try {
         const { error } = await supabase
           .from("variants")

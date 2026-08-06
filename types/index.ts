@@ -25,6 +25,10 @@ export type Variant = {
   product_id: string;
   label: string;
   price: number;
+  retail_price?: number | null;
+  wholesale_price?: number | null;
+  box_price?: number | null;
+  box_quantity?: number | null;
   image_url?: string | null;
   created_at?: string;
 };

@@ -25,6 +25,7 @@ type NewVariantRow = {
   key: string;
   label: string;
   price: string;
+  retailPrice: string;
   imageFile: File | null;
   imagePreview: string | null;
 };
@@ -82,6 +83,7 @@ export default function AdminPage() {
     key: uuidv4(),
     label: "",
     price: "",
+    retailPrice: "",
     imageFile: null,
     imagePreview: null,
   });
@@ -225,7 +227,7 @@ export default function AdminPage() {
           return;
         }
 
-        const parsedRows: { label: string; price: number; image_url?: string }[] = [];
+        const parsedRows: { label: string; price: number; retail_price?: number; image_url?: string }[] = [];
         for (const row of validRows) {
           const price = Number(row.price);
           if (Number.isNaN(price) || price < 0) {
@@ -233,11 +235,20 @@ export default function AdminPage() {
             setSavingProduct(false);
             return;
           }
+          let retailPrice: number | undefined;
+          if (row.retailPrice.trim()) {
+            retailPrice = Number(row.retailPrice);
+            if (Number.isNaN(retailPrice) || retailPrice < 0) {
+              showToast(`Invalid retail price for "${row.label.trim()}"`);
+              setSavingProduct(false);
+              return;
+            }
+          }
           let imageUrl: string | undefined;
           if (row.imageFile) {
             imageUrl = await uploadProductImage(row.imageFile);
           }
-          parsedRows.push({ label: row.label.trim(), price, image_url: imageUrl });
+          parsedRows.push({ label: row.label.trim(), price, retail_price: retailPrice, image_url: imageUrl });
         }
 
         await addProduct(
@@ -932,6 +943,18 @@ export default function AdminPage() {
                   />
                 </div>
                 <label className="block">
+                  <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Retail Price (optional)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={row.retailPrice}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { retailPrice: event.target.value })}
+                    className={inputClass}
+                    placeholder="Retail price"
+                  />
+                </label>
+                <label className="block">
                   <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
                   <input
                     type="file"
@@ -1005,14 +1028,16 @@ export default function AdminPage() {
                         }}
                       />
                     </label>
-                    <input
-                      defaultValue={variant.label}
-                      onBlur={(event) => {
-                        const label = event.target.value.trim();
-                        if (label && label !== variant.label) updateVariant(variant.id, { label });
-                      }}
-                      className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
-                    />
+                  <input
+                    defaultValue={variant.label}
+                    onBlur={(event) => {
+                      const label = event.target.value.trim();
+                      if (label && label !== variant.label) updateVariant(variant.id, { label });
+                    }}
+                    className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Price</span>
                     <input
                       type="number"
                       min="0"
@@ -1022,23 +1047,64 @@ export default function AdminPage() {
                         const price = Number(event.target.value);
                         if (!Number.isNaN(price) && price !== variant.price) updateVariant(variant.id, { price });
                       }}
-                      className="w-24 rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProductDrawerOpen(false);
-                        setResumeDrawer(() => () => setProductDrawerOpen(true));
-                        setPendingDelete({
-                          type: "variant",
-                          id: variant.id,
-                          name: `${editingProduct.name} (${variant.label})`,
-                        });
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Retail</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={variant.retail_price ?? ""}
+                      placeholder="—"
+                      onBlur={(event) => {
+                        const value = event.target.value.trim();
+                        const retailPrice = value === "" ? null : Number(value);
+                        if (retailPrice === null || !Number.isNaN(retailPrice)) {
+                          if (retailPrice !== (variant.retail_price ?? null)) {
+                            updateVariant(variant.id, { retail_price: retailPrice });
+                          }
+                        }
                       }}
-                      className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
-                    >
-                      Delete
-                    </button>
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Wholesale</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={variant.wholesale_price ?? ""}
+                      placeholder="—"
+                      onBlur={(event) => {
+                        const value = event.target.value.trim();
+                        const wholesalePrice = value === "" ? null : Number(value);
+                        if (wholesalePrice === null || !Number.isNaN(wholesalePrice)) {
+                          if (wholesalePrice !== (variant.wholesale_price ?? null)) {
+                            updateVariant(variant.id, { wholesale_price: wholesalePrice });
+                          }
+                        }
+                      }}
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductDrawerOpen(false);
+                      setResumeDrawer(() => () => setProductDrawerOpen(true));
+                      setPendingDelete({
+                        type: "variant",
+                        id: variant.id,
+                        name: `${editingProduct.name} (${variant.label})`,
+                      });
+                    }}
+                    className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
+                  >
+                    Delete
+                  </button>
                   </div>
                 ))}
               </div>
