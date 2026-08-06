@@ -100,7 +100,7 @@ export function OrderListPanel() {
         items: cart.map((item) => ({
           product_name: item.productName,
           variant_label: item.variantLabel,
-          price: item.price,
+          retail_price: item.retailPrice,
           quantity: item.quantity,
         })),
         itemCount: cartCount,
@@ -244,7 +244,7 @@ export function OrderListPanel() {
 
                   <div className="flex items-center justify-between">
                     <p className="text-base font-bold text-foreground">
-                      {formatCurrency(item.price * item.quantity)}
+                      {formatCurrency(item.retailPrice * item.quantity)}
                     </p>
                     <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
                       <button

@@ -24,7 +24,6 @@ type PendingDelete =
 type NewVariantRow = {
   key: string;
   label: string;
-  price: string;
   retailPrice: string;
   imageFile: File | null;
   imagePreview: string | null;
@@ -82,7 +81,6 @@ export default function AdminPage() {
   const makeEmptyVariantRow = (): NewVariantRow => ({
     key: uuidv4(),
     label: "",
-    price: "",
     retailPrice: "",
     imageFile: null,
     imagePreview: null,
@@ -202,7 +200,7 @@ export default function AdminPage() {
   const openEditProduct = (product: Product) => {
     setEditingProduct(product);
     setProductFormName(product.name);
-    setProductFormSectionId(product.section_id);
+    setProductFormSectionId(product.section_id ?? "");
     setProductFormBrandId(product.brand_id ?? "");
     resetProductVariantForms();
     setProductDrawerOpen(true);
@@ -220,35 +218,26 @@ export default function AdminPage() {
         });
         showToast("Product updated");
       } else {
-        const validRows = newProductVariants.filter((row) => row.label.trim() && row.price.trim());
+        const validRows = newProductVariants.filter((row) => row.label.trim() && row.retailPrice.trim());
         if (validRows.length === 0) {
-          showToast("Add at least one variant label and price");
+          showToast("Add at least one variant label and retail price");
           setSavingProduct(false);
           return;
         }
 
-        const parsedRows: { label: string; price: number; retail_price?: number; image_url?: string }[] = [];
+        const parsedRows: { label: string; retail_price: number; image_url?: string }[] = [];
         for (const row of validRows) {
-          const price = Number(row.price);
-          if (Number.isNaN(price) || price < 0) {
-            showToast(`Invalid price for "${row.label.trim()}"`);
+          const retailPrice = Number(row.retailPrice);
+          if (Number.isNaN(retailPrice) || retailPrice < 0) {
+            showToast(`Invalid retail price for "${row.label.trim()}"`);
             setSavingProduct(false);
             return;
-          }
-          let retailPrice: number | undefined;
-          if (row.retailPrice.trim()) {
-            retailPrice = Number(row.retailPrice);
-            if (Number.isNaN(retailPrice) || retailPrice < 0) {
-              showToast(`Invalid retail price for "${row.label.trim()}"`);
-              setSavingProduct(false);
-              return;
-            }
           }
           let imageUrl: string | undefined;
           if (row.imageFile) {
             imageUrl = await uploadProductImage(row.imageFile);
           }
-          parsedRows.push({ label: row.label.trim(), price, retail_price: retailPrice, image_url: imageUrl });
+          parsedRows.push({ label: row.label.trim(), retail_price: retailPrice, image_url: imageUrl });
         }
 
         await addProduct(
@@ -369,7 +358,7 @@ export default function AdminPage() {
   const priceRangeFor = (productId: string) => {
     const productVariants = variants.filter((v) => v.product_id === productId);
     if (productVariants.length === 0) return "No variants";
-    const prices = productVariants.map((v) => v.price);
+    const prices = productVariants.map((v) => v.retail_price);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     return min === max ? formatCurrency(min) : `${formatCurrency(min)} – ${formatCurrency(max)}`;
@@ -689,7 +678,7 @@ export default function AdminPage() {
                               <span className="text-kiosk-accent"> ({item.variant_label})</span>
                             </span>
                             <span className="font-semibold text-foreground">
-                              {formatCurrency(item.price * item.quantity)}
+                              {formatCurrency(item.retail_price * item.quantity)}
                             </span>
                           </div>
                         ))}
@@ -936,24 +925,12 @@ export default function AdminPage() {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={row.price}
-                    onChange={(event) => updateNewProductVariantRow(row.key, { price: event.target.value })}
-                    className={inputClass}
-                    placeholder="Price"
-                  />
-                </div>
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Retail Price (optional)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
                     value={row.retailPrice}
                     onChange={(event) => updateNewProductVariantRow(row.key, { retailPrice: event.target.value })}
                     className={inputClass}
-                    placeholder="Retail price"
+                    placeholder="Retail Price"
                   />
-                </label>
+                </div>
                 <label className="block">
                   <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
                   <input
@@ -1037,35 +1014,15 @@ export default function AdminPage() {
                     className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
                   />
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-kiosk-accent">Price</span>
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Retail Price</span>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      defaultValue={variant.price}
+                      defaultValue={variant.retail_price}
                       onBlur={(event) => {
                         const price = Number(event.target.value);
-                        if (!Number.isNaN(price) && price !== variant.price) updateVariant(variant.id, { price });
-                      }}
-                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-kiosk-accent">Retail</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={variant.retail_price ?? ""}
-                      placeholder="—"
-                      onBlur={(event) => {
-                        const value = event.target.value.trim();
-                        const retailPrice = value === "" ? null : Number(value);
-                        if (retailPrice === null || !Number.isNaN(retailPrice)) {
-                          if (retailPrice !== (variant.retail_price ?? null)) {
-                            updateVariant(variant.id, { retail_price: retailPrice });
-                          }
-                        }
+                        if (!Number.isNaN(price) && price !== variant.retail_price) updateVariant(variant.id, { retail_price: price });
                       }}
                       className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
                     />

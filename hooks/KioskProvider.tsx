@@ -63,7 +63,7 @@ export function KioskProvider({ children }: { children: ReactNode }) {
             variantId: variant.id,
             productName,
             variantLabel: variant.label,
-            price: variant.price,
+            retailPrice: variant.retail_price,
             quantity: 1,
           },
         ];
@@ -117,7 +117,7 @@ export function KioskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const cartTotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    () => cart.reduce((sum, item) => sum + item.retailPrice * item.quantity, 0),
     [cart],
   );
 

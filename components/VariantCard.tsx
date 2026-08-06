@@ -39,7 +39,7 @@ export function VariantCard({ productName, variant, onAdd, onEdit, onDelete }: V
         </div>
 
         <div className="w-full pt-2">
-          <p className="text-2xl font-bold text-foreground">{formatCurrency(variant.price)}</p>
+          <p className="text-2xl font-bold text-foreground">{formatCurrency(variant.retail_price)}</p>
         </div>
       </button>
       <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 smooth-transition">

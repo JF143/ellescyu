@@ -38,7 +38,6 @@ export function useProducts() {
     name: string,
     variantRows: Array<{
       label: string;
-      price: number;
       retail_price?: number;
       wholesale_price?: number;
       image_url?: string;
@@ -62,7 +61,6 @@ export function useProducts() {
           id: uuidv4(),
           product_id: product.id,
           label: row.label,
-          price: row.price,
           retail_price: row.retail_price ?? null,
           wholesale_price: row.wholesale_price ?? null,
           image_url: row.image_url || null,

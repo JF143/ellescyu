@@ -24,8 +24,7 @@ export type Variant = {
   id: string;
   product_id: string;
   label: string;
-  price: number;
-  retail_price?: number | null;
+  retail_price: number;
   wholesale_price?: number | null;
   box_price?: number | null;
   box_quantity?: number | null;
@@ -37,7 +36,7 @@ export type CartItem = {
   variantId: string;
   productName: string;
   variantLabel: string;
-  price: number;
+  retailPrice: number;
   quantity: number;
 };
 
@@ -50,7 +49,7 @@ export type KioskData = {
 export type InvoiceItem = {
   product_name: string;
   variant_label: string;
-  price: number;
+  retail_price: number;
   quantity: number;
 };
 
