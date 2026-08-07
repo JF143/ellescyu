@@ -14,7 +14,7 @@ type EditVariantModalProps = {
 export function EditVariantModal({ variant, isOpen, onClose, onSuccess }: EditVariantModalProps) {
   const { updateVariant } = useVariants();
   const [label, setLabel] = useState(variant.label);
-  const [price, setPrice] = useState(variant.price.toString());
+  const [price, setPrice] = useState(variant.retail_price.toString());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -26,7 +26,7 @@ export function EditVariantModal({ variant, isOpen, onClose, onSuccess }: EditVa
 
     setIsSubmitting(true);
     try {
-      await updateVariant(variant.id, { label: label.trim(), price: numPrice });
+      await updateVariant(variant.id, { label: label.trim(), retail_price: numPrice });
       onSuccess();
       onClose();
     } catch (error) {
