@@ -70,3 +70,32 @@ html, body {
     box-shadow: 0 8px 24px rgba(29, 79, 216, 0.12);
   }
 }
+
+@layer utilities {
+  @keyframes receipt-confetti-fall {
+    0% {
+      transform: translate(0, 0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--tx), var(--ty)) rotate(var(--rot));
+      opacity: 0;
+    }
+  }
+
+
+  @keyframes receipt-slide-up {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .receipt-slide-up {
+    animation: receipt-slide-up 0.4s ease-out;
+  }
+}
