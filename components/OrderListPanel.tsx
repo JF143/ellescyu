@@ -8,6 +8,7 @@ import { useMounted } from "@/hooks/useMounted";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useToast } from "@/components/Toast";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { getItemUnitPrice } from "@/lib/pricing";
 
 const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
 
@@ -25,6 +26,8 @@ export function OrderListPanel() {
     incrementItem,
     decrementItem,
     removeItem,
+    togglePriceType,
+    toggleBoxMode,
     clearCart,
     checkoutStage: stage,
     setCheckoutStage: setStage,
@@ -105,7 +108,7 @@ export function OrderListPanel() {
         items: cart.map((item) => ({
           product_name: item.productName,
           variant_label: item.variantLabel,
-          retail_price: item.retailPrice,
+          retail_price: getItemUnitPrice(item),
           quantity: item.quantity,
         })),
         itemCount: cartCount,
@@ -230,7 +233,7 @@ export function OrderListPanel() {
                   key={item.variantId}
                   className="py-4 first:pt-0"
                 >
-                  <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate text-sm">{item.productName}</p>
                       <p className="text-xs text-gray-500 font-medium mt-0.5">{item.variantLabel}</p>
@@ -247,29 +250,63 @@ export function OrderListPanel() {
                     </button>
                   </div>
 
+                  <div className="mb-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => togglePriceType(item.variantId)}
+                      disabled={item.wholesalePrice == null || item.isBox}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                        item.priceType === "wholesale"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-kiosk-light text-kiosk-primary"
+                      }`}
+                    >
+                      {item.priceType === "wholesale" ? "Wholesale" : "Retail"}
+                    </button>
+                    {item.boxPrice != null && item.boxQuantity != null && (
+                      <span className="text-[11px] font-medium text-gray-400">
+                        1 box = {item.boxQuantity} pcs
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <p className="text-base font-bold text-foreground">
-                      {formatCurrency(item.retailPrice * item.quantity)}
+                      {formatCurrency(getItemUnitPrice(item) * item.quantity)}
                     </p>
-                    <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
+                        <button
+                          type="button"
+                          onClick={() => decrementItem(item.variantId)}
+                          aria-label={`Decrease quantity of ${item.productName}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
+                        >
+                          −
+                        </button>
+                        <span className="w-5 text-center font-bold text-gray-900 text-xs">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => incrementItem(item.variantId)}
+                          aria-label={`Increase quantity of ${item.productName}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
+                        >
+                          +
+                        </button>                        
+                      </div>
                       <button
                         type="button"
-                        onClick={() => decrementItem(item.variantId)}
-                        aria-label={`Decrease quantity of ${item.productName}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
+                        onClick={() => toggleBoxMode(item.variantId)}
+                        disabled={item.boxPrice == null}
+                        aria-label={item.isBox ? "Switch to piece pricing" : "Switch to box pricing"}
+                        aria-pressed={item.isBox}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg text-xl smooth-transition tap-scale disabled:opacity-30 disabled:cursor-not-allowed ${
+                          item.isBox ? "bg-kiosk-primary text-white" : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
+                        }`}
                       >
-                        −
-                      </button>
-                      <span className="w-5 text-center font-bold text-gray-900 text-xs">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => incrementItem(item.variantId)}
-                        aria-label={`Increase quantity of ${item.productName}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
-                      >
-                        +
+                        📦
                       </button>
                     </div>
                   </div>

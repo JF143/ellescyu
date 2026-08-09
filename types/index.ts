@@ -32,11 +32,18 @@ export type Variant = {
   created_at?: string;
 };
 
+export type PriceType = "retail" | "wholesale";
+
 export type CartItem = {
   variantId: string;
   productName: string;
   variantLabel: string;
   retailPrice: number;
+  wholesalePrice: number | null;
+  boxQuantity: number | null;
+  boxPrice: number | null;
+  priceType: PriceType;
+  isBox: boolean;
   quantity: number;
 };
 

@@ -25,6 +25,7 @@ type NewVariantRow = {
   key: string;
   label: string;
   retailPrice: string;
+  wholesalePrice: string;
   boxQuantity: string;
   boxPrice: string;
   imageFile: File | null;
@@ -102,6 +103,7 @@ export default function AdminPage() {
     key: uuidv4(),
     label: "",
     retailPrice: "",
+    wholesalePrice: "",
     boxQuantity: "",
     boxPrice: "",
     imageFile: null,
@@ -250,6 +252,7 @@ export default function AdminPage() {
         const parsedRows: {
           label: string;
           retail_price: number;
+          wholesale_price?: number;
           box_quantity?: number;
           box_price?: number;
           image_url?: string;
@@ -260,6 +263,16 @@ export default function AdminPage() {
             showToast(`Invalid retail price for "${row.label.trim()}"`);
             setSavingProduct(false);
             return;
+          }
+
+          let wholesalePrice: number | undefined;
+          if (row.wholesalePrice.trim()) {
+            wholesalePrice = Number(row.wholesalePrice);
+            if (Number.isNaN(wholesalePrice) || wholesalePrice < 0) {
+              showToast(`Invalid wholesale price for "${row.label.trim()}"`);
+              setSavingProduct(false);
+              return;
+            }
           }
 
           let boxQuantity: number | undefined;
@@ -289,6 +302,7 @@ export default function AdminPage() {
           parsedRows.push({
             label: row.label.trim(),
             retail_price: retailPrice,
+            wholesale_price: wholesalePrice,
             box_quantity: boxQuantity,
             box_price: boxPrice,
             image_url: imageUrl,
@@ -1052,12 +1066,12 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="number"
-                    min="1"
-                    step="1"
-                    value={row.boxQuantity}
-                    onChange={(event) => updateNewProductVariantRow(row.key, { boxQuantity: event.target.value })}
+                    min="0"
+                    step="0.01"
+                    value={row.wholesalePrice}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { wholesalePrice: event.target.value })}
                     className={inputClass}
-                    placeholder="Pieces per box (optional)"
+                    placeholder="Wholesale Price (optional)"
                   />
                   <input
                     type="number"
@@ -1067,6 +1081,17 @@ export default function AdminPage() {
                     onChange={(event) => updateNewProductVariantRow(row.key, { boxPrice: event.target.value })}
                     className={inputClass}
                     placeholder="Box Price (optional)"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={row.boxQuantity}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { boxQuantity: event.target.value })}
+                    className={inputClass}
+                    placeholder="Pieces per box (optional)"
                   />
                 </div>
                 <label className="block">
@@ -1152,6 +1177,20 @@ export default function AdminPage() {
                     className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
                   />
                   <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Retail Price</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={variant.retail_price}
+                      onBlur={(event) => {
+                        const price = Number(event.target.value);
+                        if (!Number.isNaN(price) && price !== variant.retail_price) updateVariant(variant.id, { retail_price: price });
+                      }}
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-semibold text-kiosk-accent">Wholesale</span>
                     <input
                       type="number"
@@ -1172,26 +1211,6 @@ export default function AdminPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-kiosk-accent">Pcs/Box</span>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      defaultValue={variant.box_quantity ?? ""}
-                      placeholder="—"
-                      onBlur={(event) => {
-                        const value = event.target.value.trim();
-                        const boxQuantity = value === "" ? null : Number(value);
-                        if (boxQuantity === null || !Number.isNaN(boxQuantity)) {
-                          if (boxQuantity !== (variant.box_quantity ?? null)) {
-                            updateVariant(variant.id, { box_quantity: boxQuantity });
-                          }
-                        }
-                      }}
-                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-semibold text-kiosk-accent">Box Price</span>
                     <input
                       type="number"
@@ -1205,6 +1224,26 @@ export default function AdminPage() {
                         if (boxPrice === null || !Number.isNaN(boxPrice)) {
                           if (boxPrice !== (variant.box_price ?? null)) {
                             updateVariant(variant.id, { box_price: boxPrice });
+                          }
+                        }
+                      }}
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Pcs/Box</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      defaultValue={variant.box_quantity ?? ""}
+                      placeholder="—"
+                      onBlur={(event) => {
+                        const value = event.target.value.trim();
+                        const boxQuantity = value === "" ? null : Number(value);
+                        if (boxQuantity === null || !Number.isNaN(boxQuantity)) {
+                          if (boxQuantity !== (variant.box_quantity ?? null)) {
+                            updateVariant(variant.id, { box_quantity: boxQuantity });
                           }
                         }
                       }}

@@ -1,15 +1,15 @@
-// import type { CartItem, CustomerType } from "@/types";
+import type { CartItem } from "@/types";
 
-// export function getLineUnitPrice(item: CartItem, customerType: CustomerType): number {
-//   if (item.sellingUnit === "box") {
-//     return item.boxPrice ?? item.retailPrice;
-//   }
-//   if (customerType === "wholesale" && item.wholesalePrice != null) {
-//     return item.wholesalePrice;
-//   }
-//   return item.retailPrice;
-// }
+export function getItemUnitPrice(item: CartItem): number {
+  if (item.isBox && item.boxPrice != null) {
+    return item.boxPrice;
+  }
+  if (item.priceType === "wholesale" && item.wholesalePrice != null) {
+    return item.wholesalePrice;
+  }
+  return item.retailPrice;
+}
 
-// export function getLineTotal(item: CartItem, customerType: CustomerType): number {
-//   return getLineUnitPrice(item, customerType) * item.quantity;
-// }
+export function getItemLineTotal(item: CartItem): number {
+  return getItemUnitPrice(item) * item.quantity;
+}

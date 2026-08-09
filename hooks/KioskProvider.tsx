@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { STORAGE_KEYS, storageGet, storageSet } from "@/lib/storage";
+import { getItemUnitPrice } from "@/lib/pricing";
 import type { CartItem, Variant } from "@/types";
 
 export type CheckoutStage = "cart" | "payment" | "change";
@@ -20,6 +21,8 @@ type CartContextValue = {
   incrementItem: (variantId: string) => void;
   decrementItem: (variantId: string) => void;
   removeItem: (variantId: string) => void;
+  togglePriceType: (variantId: string) => void;
+  toggleBoxMode: (variantId: string) => void;
   clearCart: () => CartItem[];
   cartTotal: number;
   cartCount: number;
@@ -64,6 +67,11 @@ export function KioskProvider({ children }: { children: ReactNode }) {
             productName,
             variantLabel: variant.label,
             retailPrice: variant.retail_price,
+            wholesalePrice: variant.wholesale_price ?? null,
+            boxQuantity: variant.box_quantity ?? null,
+            boxPrice: variant.box_price ?? null,
+            priceType: "retail",
+            isBox: false,
             quantity: 1,
           },
         ];
@@ -107,6 +115,34 @@ export function KioskProvider({ children }: { children: ReactNode }) {
     [checkoutStage],
   );
 
+  const togglePriceType = useCallback(
+    (variantId: string) => {
+      if (checkoutStage !== "cart") return;
+      setCart((prev) =>
+        prev.map((item) => {
+          if (item.variantId !== variantId) return item;
+          if (item.wholesalePrice == null) return item;
+          return { ...item, priceType: item.priceType === "retail" ? "wholesale" : "retail" };
+        }),
+      );
+    },
+    [checkoutStage],
+  );
+
+  const toggleBoxMode = useCallback(
+    (variantId: string) => {
+      if (checkoutStage !== "cart") return;
+      setCart((prev) =>
+        prev.map((item) => {
+          if (item.variantId !== variantId) return item;
+          if (item.boxPrice == null) return item;
+          return { ...item, isBox: !item.isBox };
+        }),
+      );
+    },
+    [checkoutStage],
+  );
+
   const clearCart = useCallback(() => {
     let snapshot: CartItem[] = [];
     setCart((prev) => {
@@ -117,7 +153,7 @@ export function KioskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const cartTotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.retailPrice * item.quantity, 0),
+    () => cart.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0),
     [cart],
   );
 
@@ -133,6 +169,8 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       incrementItem,
       decrementItem,
       removeItem,
+      togglePriceType,
+      toggleBoxMode,
       clearCart,
       cartTotal,
       cartCount,
@@ -147,6 +185,8 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       incrementItem,
       decrementItem,
       removeItem,
+      togglePriceType,
+      toggleBoxMode,
       clearCart,
       cartTotal,
       cartCount,
@@ -167,33 +207,5 @@ function useCartContext(): CartContextValue {
 }
 
 export function useCart() {
-  const {
-    cart,
-    addToCart,
-    incrementItem,
-    decrementItem,
-    removeItem,
-    clearCart,
-    cartTotal,
-    cartCount,
-    checkoutStage,
-    setCheckoutStage,
-    appReady,
-    setAppReady,
-  } = useCartContext();
-
-  return {
-    cart,
-    addToCart,
-    incrementItem,
-    decrementItem,
-    removeItem,
-    clearCart,
-    cartTotal,
-    cartCount,
-    checkoutStage,
-    setCheckoutStage,
-    appReady,
-    setAppReady,
-  };
+  return useCartContext();
 }
