@@ -101,10 +101,20 @@ export default function HomePage() {
   };
 
   const [minLoadTimeElapsed, setMinLoadTimeElapsed] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setMinLoadTimeElapsed(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+const [hasShownIntro, setHasShownIntro] = useState(false);
+
+useEffect(() => {
+  if (sessionStorage.getItem("ellescyu-intro-shown") === "1") {
+    setHasShownIntro(true);
+    setMinLoadTimeElapsed(true);
+    return;
+  }
+  const timer = setTimeout(() => {
+    setMinLoadTimeElapsed(true);
+    sessionStorage.setItem("ellescyu-intro-shown", "1");
+  }, 3000);
+  return () => clearTimeout(timer);
+}, []);
 
   const renderCategoryButtons = () => (
     <>
@@ -142,9 +152,9 @@ export default function HomePage() {
     </>
   );
 
-  if (!mounted || isLoading || !minLoadTimeElapsed) {
-    return <LoadingScreen />;
-  }
+  if (!mounted || (!hasShownIntro && (isLoading || !minLoadTimeElapsed))) {
+  return <LoadingScreen />;
+}
 
   if (error) {
     return (

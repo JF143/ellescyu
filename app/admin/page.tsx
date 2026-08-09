@@ -25,6 +25,8 @@ type NewVariantRow = {
   key: string;
   label: string;
   retailPrice: string;
+  boxQuantity: string;
+  boxPrice: string;
   imageFile: File | null;
   imagePreview: string | null;
 };
@@ -36,9 +38,27 @@ const labelClass = "mb-2 block text-sm font-semibold text-kiosk-accent";
 export default function AdminPage() {
   const { sections, addSection, updateSection, deleteSection } = useSections();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
-  const { variants, addVariant, updateVariant, deleteVariant, fetchVariants } = useVariants();  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
+  const { variants, addVariant, updateVariant, deleteVariant, fetchVariants } = useVariants();
+  const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
   const { invoices, isLoading: invoicesLoading, updateInvoiceCustomerName } = useInvoices();
+
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState("");
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+
+  const filteredInvoices = useMemo(() => {
+    const query = invoiceSearchQuery.trim().toLowerCase();
+    if (!query) return invoices;
+    return invoices.filter((invoice) => {
+      const customer = (invoice.customer_name ?? "walk-in customer").toLowerCase();
+      const itemMatch = invoice.items.some((item) => item.product_name.toLowerCase().includes(query));
+      return customer.includes(query) || itemMatch;
+    });
+  }, [invoices, invoiceSearchQuery]);
+
+  const selectedInvoice = filteredInvoices.find((inv) => inv.id === selectedInvoiceId) ?? filteredInvoices[0] ?? null;
+
+  const handlePrintInvoice = () => window.print();
 
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [resumeDrawer, setResumeDrawer] = useState<(() => void) | null>(null);
@@ -82,6 +102,8 @@ export default function AdminPage() {
     key: uuidv4(),
     label: "",
     retailPrice: "",
+    boxQuantity: "",
+    boxPrice: "",
     imageFile: null,
     imagePreview: null,
   });
@@ -225,7 +247,13 @@ export default function AdminPage() {
           return;
         }
 
-        const parsedRows: { label: string; retail_price: number; image_url?: string }[] = [];
+        const parsedRows: {
+          label: string;
+          retail_price: number;
+          box_quantity?: number;
+          box_price?: number;
+          image_url?: string;
+        }[] = [];
         for (const row of validRows) {
           const retailPrice = Number(row.retailPrice);
           if (Number.isNaN(retailPrice) || retailPrice < 0) {
@@ -233,11 +261,38 @@ export default function AdminPage() {
             setSavingProduct(false);
             return;
           }
+
+          let boxQuantity: number | undefined;
+          if (row.boxQuantity.trim()) {
+            boxQuantity = Number(row.boxQuantity);
+            if (Number.isNaN(boxQuantity) || boxQuantity <= 0) {
+              showToast(`Invalid pieces per box for "${row.label.trim()}"`);
+              setSavingProduct(false);
+              return;
+            }
+          }
+
+          let boxPrice: number | undefined;
+          if (row.boxPrice.trim()) {
+            boxPrice = Number(row.boxPrice);
+            if (Number.isNaN(boxPrice) || boxPrice < 0) {
+              showToast(`Invalid box price for "${row.label.trim()}"`);
+              setSavingProduct(false);
+              return;
+            }
+          }
+
           let imageUrl: string | undefined;
           if (row.imageFile) {
             imageUrl = await uploadProductImage(row.imageFile);
           }
-          parsedRows.push({ label: row.label.trim(), retail_price: retailPrice, image_url: imageUrl });
+          parsedRows.push({
+            label: row.label.trim(),
+            retail_price: retailPrice,
+            box_quantity: boxQuantity,
+            box_price: boxPrice,
+            image_url: imageUrl,
+          });
         }
 
         await addProduct(
@@ -382,35 +437,9 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl gap-6 px-4 py-6 lg:px-8 lg:py-10">
-        {/* ===== Sidebar Navigation ===== */}
-        <aside className="hidden w-56 shrink-0 lg:block">
-          <nav className="sticky top-24 flex flex-col gap-1.5 rounded-2xl bg-white p-3 shadow-sm border border-kiosk-muted">
-            {[
-              { key: "categories" as const, label: "Categories", icon: "🗂️" },
-              { key: "brands" as const, label: "Brands", icon: "🏷️" },
-              { key: "products" as const, label: "Products", icon: "📦" },
-              { key: "invoices" as const, label: "Invoices", icon: "🧾" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left font-semibold transition ${
-                  activeTab === tab.key
-                    ? "bg-kiosk-primary text-white shadow"
-                    : "text-kiosk-accent hover:bg-kiosk-lighter hover:text-foreground"
-                }`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* ===== Mobile tab selector ===== */}
-        <div className="lg:hidden mb-2 flex gap-2 overflow-x-auto pb-1">
+      <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 lg:flex-row lg:gap-6 lg:px-8 lg:py-10">
+        {/* ===== Navigation: horizontal chips on mobile, vertical sidebar on lg+ ===== */}
+        <nav className="flex flex-none gap-2 overflow-x-auto pb-1 lg:sticky lg:top-24 lg:w-56 lg:flex-col lg:gap-1.5 lg:overflow-visible lg:self-start lg:rounded-2xl lg:bg-white lg:p-3 lg:shadow-sm lg:border lg:border-kiosk-muted">
           {[
             { key: "categories" as const, label: "Categories", icon: "🗂️" },
             { key: "brands" as const, label: "Brands", icon: "🏷️" },
@@ -421,17 +450,17 @@ export default function AdminPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+              className={`flex flex-none items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition lg:w-full lg:justify-start lg:rounded-xl lg:px-4 lg:py-3 lg:text-left ${
                 activeTab === tab.key
                   ? "bg-kiosk-primary text-white shadow"
-                  : "bg-white text-kiosk-accent border border-kiosk-muted"
+                  : "bg-white text-kiosk-accent border border-kiosk-muted lg:border-0 lg:bg-transparent hover:bg-kiosk-lighter hover:text-foreground"
               }`}
             >
-              <span>{tab.icon}</span>
+              <span className="text-base lg:text-lg">{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
-        </div>
+        </nav>
 
         {/* ===== Content ===== */}
         <div className="min-w-0 flex-1">
@@ -625,7 +654,7 @@ export default function AdminPage() {
 
           {activeTab === "invoices" && (
             <section>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
                 <h2 className="text-lg lg:text-xl font-bold text-foreground">Invoices</h2>
                 <span className="text-xs font-semibold text-kiosk-accent bg-kiosk-lighter px-3 py-1.5 rounded-full">
                   {invoices.length} recorded
@@ -637,63 +666,152 @@ export default function AdminPage() {
               ) : invoices.length === 0 ? (
                 <p className="text-kiosk-accent">No invoices recorded yet. They're created automatically when a payment is confirmed at checkout.</p>
               ) : (
-                <div className="space-y-3">
-                  {invoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted"
-                    >
-                      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                        <div>
+                <div className="flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-260px)]">
+                  {/* ===== Master: invoice list ===== */}
+                  <div className="lg:w-80 shrink-0 flex flex-col rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-hidden print:hidden">
+                    <div className="p-3 border-b border-kiosk-muted">
+                      <div className="relative">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kiosk-accent pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                          type="text"
+                          value={invoiceSearchQuery}
+                          onChange={(event) => setInvoiceSearchQuery(event.target.value)}
+                          placeholder="Search by customer or item..."
+                          className="w-full rounded-xl border border-kiosk-muted pl-9 pr-3 py-2 text-sm outline-none focus:border-kiosk-primary bg-kiosk-canvas"
+                        />
+                      </div>
+                    </div>
+
+                    <ul className="flex-1 overflow-y-auto divide-y divide-kiosk-muted">
+                      {filteredInvoices.length === 0 ? (
+                        <li className="px-4 py-8 text-center text-sm text-kiosk-accent">No invoices match your search.</li>
+                      ) : (
+                        filteredInvoices.map((invoice) => {
+                          const isSelected = invoice.id === selectedInvoice?.id;
+                          return (
+                            <li key={invoice.id}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedInvoiceId(invoice.id)}
+                                className={`w-full text-left px-4 py-3 transition ${
+                                  isSelected ? "bg-kiosk-primary text-white" : "hover:bg-kiosk-lighter"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className={`text-sm font-bold truncate ${isSelected ? "text-white" : "text-foreground"}`}>
+                                    {invoice.customer_name?.trim() || "Walk-in customer"}
+                                  </span>
+                                  <span className={`text-sm font-bold shrink-0 ${isSelected ? "text-white" : "text-kiosk-primary"}`}>
+                                    {formatCurrency(invoice.subtotal)}
+                                  </span>
+                                </div>
+                                <p className={`text-xs mt-0.5 ${isSelected ? "text-white/70" : "text-kiosk-accent"}`}>
+                                  {invoice.created_at
+                                    ? new Date(invoice.created_at).toLocaleString([], {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    : ""}
+                                  {" · "}
+                                  {invoice.item_count} {invoice.item_count === 1 ? "item" : "items"}
+                                </p>
+                              </button>
+                            </li>
+                          );
+                        })
+                      )}
+                    </ul>
+                  </div>
+
+                  {/* ===== Detail: selected invoice ===== */}
+                  <div className="flex-1 min-w-0 rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-y-auto print:border-none print:shadow-none">
+                    {!selectedInvoice ? (
+                      <div className="h-full flex items-center justify-center p-8 text-center text-kiosk-accent">
+                        Select an invoice to view details.
+                      </div>
+                    ) : (
+                      <div className="p-6 lg:p-8 max-w-xl mx-auto">
+                        <div className="flex items-start justify-between gap-3 mb-6">
+                          <div>
+                            <h3 className="text-2xl font-bold text-foreground">Receipt</h3>
+                            <p className="text-sm text-kiosk-accent mt-1">
+                              {selectedInvoice.created_at
+                                ? new Date(selectedInvoice.created_at).toLocaleString([], { dateStyle: "long", timeStyle: "short" })
+                                : ""}
+                            </p>
+                            <p className="text-sm text-kiosk-accent mt-0.5 font-medium">Cashier: —</p>
+                          </div>
+                          <div className="flex gap-2 print:hidden">
+                            <button
+                              type="button"
+                              onClick={handlePrintInvoice}
+                              className="rounded-xl border border-kiosk-muted px-4 py-2 text-sm font-semibold text-kiosk-primary hover:bg-kiosk-lighter transition"
+                            >
+                              Print
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handlePrintInvoice}
+                              className="rounded-xl bg-kiosk-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
+                            >
+                              Download PDF
+                            </button>
+                          </div>
+                        </div>
+
+                        <label className="block mb-6">
+                          <span className="mb-1 block text-xs font-semibold text-kiosk-accent uppercase tracking-wide">Customer</span>
                           <input
-                            defaultValue={invoice.customer_name ?? ""}
+                            defaultValue={selectedInvoice.customer_name ?? ""}
                             placeholder="Walk-in customer"
                             onBlur={(e) => {
                               const name = e.target.value.trim();
-                              if (name !== (invoice.customer_name ?? "")) {
-                                updateInvoiceCustomerName(invoice.id, name);
+                              if (name !== (selectedInvoice.customer_name ?? "")) {
+                                updateInvoiceCustomerName(selectedInvoice.id, name);
                               }
                             }}
-                            className="font-bold text-foreground bg-transparent outline-none focus:underline decoration-dashed underline-offset-4 w-full"
+                            className="w-full font-bold text-foreground text-lg bg-transparent outline-none focus:underline decoration-dashed underline-offset-4"
                           />
-                          <p className="text-xs text-kiosk-accent">
-                            {invoice.created_at
-                              ? new Date(invoice.created_at).toLocaleString([], {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                })
-                              : ""}
-                          </p>
-                        </div>
-                        <span className="text-xs font-semibold text-kiosk-accent bg-kiosk-lighter px-2.5 py-1 rounded-full">
-                          {invoice.item_count} {invoice.item_count === 1 ? "item" : "items"}
-                        </span>
-                      </div>
+                        </label>
 
-                      <div className="mb-3 space-y-1.5 border-t border-dashed border-kiosk-muted pt-3">
-                        {invoice.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-gray-700">
-                              {item.quantity}x {item.product_name}
-                              <span className="text-kiosk-accent"> ({item.variant_label})</span>
-                            </span>
-                            <span className="font-semibold text-foreground">
-                              {formatCurrency(item.retail_price * item.quantity)}
+                        <div className="space-y-2 border-t border-dashed border-kiosk-muted pt-4 mb-4">
+                          <p className="text-xs font-semibold text-kiosk-accent uppercase tracking-wide mb-2">Items</p>
+                          {selectedInvoice.items.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-700">
+                                {item.quantity}x {item.product_name}
+                                <span className="text-kiosk-accent"> ({item.variant_label})</span>
+                              </span>
+                              <span className="font-semibold text-foreground">
+                                {formatCurrency(item.retail_price * item.quantity)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="border-t-2 border-dashed border-kiosk-muted pt-4 space-y-2">
+                          <div className="flex items-center justify-between text-sm text-kiosk-accent">
+                            <span>Cash Received</span>
+                            <span>{formatCurrency(selectedInvoice.cash_received)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm text-kiosk-accent">
+                            <span>Change</span>
+                            <span>{formatCurrency(selectedInvoice.change_due)}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t border-kiosk-muted">
+                            <span className="font-bold text-foreground">Total</span>
+                            <span className="text-2xl font-bold text-kiosk-primary">
+                              {formatCurrency(selectedInvoice.subtotal)}
                             </span>
                           </div>
-                        ))}
+                        </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-kiosk-muted pt-3 text-sm">
-                        <span className="text-kiosk-accent">
-                          Cash {formatCurrency(invoice.cash_received)} · Change {formatCurrency(invoice.change_due)}
-                        </span>
-                        <span className="text-lg font-bold text-kiosk-primary">
-                          {formatCurrency(invoice.subtotal)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
             </section>
@@ -931,6 +1049,26 @@ export default function AdminPage() {
                     placeholder="Retail Price"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={row.boxQuantity}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { boxQuantity: event.target.value })}
+                    className={inputClass}
+                    placeholder="Pieces per box (optional)"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={row.boxPrice}
+                    onChange={(event) => updateNewProductVariantRow(row.key, { boxPrice: event.target.value })}
+                    className={inputClass}
+                    placeholder="Box Price (optional)"
+                  />
+                </div>
                 <label className="block">
                   <span className="mb-2 block text-xs font-semibold text-kiosk-accent">Photo (optional)</span>
                   <input
@@ -1014,20 +1152,6 @@ export default function AdminPage() {
                     className="flex-1 min-w-[100px] rounded-lg border border-kiosk-muted bg-white px-3 py-2 text-sm outline-none focus:border-kiosk-primary"
                   />
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-kiosk-accent">Retail Price</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={variant.retail_price}
-                      onBlur={(event) => {
-                        const price = Number(event.target.value);
-                        if (!Number.isNaN(price) && price !== variant.retail_price) updateVariant(variant.id, { retail_price: price });
-                      }}
-                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-semibold text-kiosk-accent">Wholesale</span>
                     <input
                       type="number"
@@ -1047,6 +1171,46 @@ export default function AdminPage() {
                       className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
                     />
                   </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Pcs/Box</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      defaultValue={variant.box_quantity ?? ""}
+                      placeholder="—"
+                      onBlur={(event) => {
+                        const value = event.target.value.trim();
+                        const boxQuantity = value === "" ? null : Number(value);
+                        if (boxQuantity === null || !Number.isNaN(boxQuantity)) {
+                          if (boxQuantity !== (variant.box_quantity ?? null)) {
+                            updateVariant(variant.id, { box_quantity: boxQuantity });
+                          }
+                        }
+                      }}
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-kiosk-accent">Box Price</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={variant.box_price ?? ""}
+                      placeholder="—"
+                      onBlur={(event) => {
+                        const value = event.target.value.trim();
+                        const boxPrice = value === "" ? null : Number(value);
+                        if (boxPrice === null || !Number.isNaN(boxPrice)) {
+                          if (boxPrice !== (variant.box_price ?? null)) {
+                            updateVariant(variant.id, { box_price: boxPrice });
+                          }
+                        }
+                      }}
+                      className="w-20 rounded-lg border border-kiosk-muted bg-white px-2 py-1.5 text-sm outline-none focus:border-kiosk-primary"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
@@ -1058,7 +1222,7 @@ export default function AdminPage() {
                         name: `${editingProduct.name} (${variant.label})`,
                       });
                     }}
-                    className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
+                    className="ml-auto rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-200"
                   >
                     Delete
                   </button>

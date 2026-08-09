@@ -64,6 +64,11 @@ export function OrderListPanel() {
     });
   }, [stage]);
 
+  const receiptTimestamp = useMemo(() => {
+    if (stage !== "change") return null;
+    return new Date();
+  }, [stage]);
+
   if (!mounted || pathname.startsWith("/admin") || !appReady) {
     return null;
   }
@@ -402,6 +407,15 @@ export function OrderListPanel() {
                     {customerName.trim()}
                   </p>
                 )}
+              </div>
+
+              <div className="mb-5 flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  {receiptTimestamp
+                    ? receiptTimestamp.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+                    : ""}
+                </span>
+                <span className="font-medium">Cashier: —</span>
               </div>
 
               <div className="mb-5 border-t-2 border-dashed border-kiosk-muted" />

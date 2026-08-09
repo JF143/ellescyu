@@ -38,8 +38,10 @@ export function useProducts() {
     name: string,
     variantRows: Array<{
       label: string;
-      retail_price?: number;
+      retail_price: number;
       wholesale_price?: number;
+      box_quantity?: number;
+      box_price?: number;
       image_url?: string;
     }>,
     brandId?: string,
@@ -61,8 +63,10 @@ export function useProducts() {
           id: uuidv4(),
           product_id: product.id,
           label: row.label,
-          retail_price: row.retail_price ?? null,
+          retail_price: row.retail_price,
           wholesale_price: row.wholesale_price ?? null,
+          box_quantity: row.box_quantity ?? null,
+          box_price: row.box_price ?? null,
           image_url: row.image_url || null,
         }));
 
