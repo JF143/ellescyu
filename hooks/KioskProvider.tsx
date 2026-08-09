@@ -11,7 +11,7 @@ import {
 } from "react";
 import { STORAGE_KEYS, storageGet, storageSet } from "@/lib/storage";
 import { getItemUnitPrice } from "@/lib/pricing";
-import type { CartItem, Variant } from "@/types";
+import type { CartItem, PriceType, SellingUnit, Variant } from "@/types";
 
 export type CheckoutStage = "cart" | "payment" | "change";
 
@@ -21,8 +21,8 @@ type CartContextValue = {
   incrementItem: (variantId: string) => void;
   decrementItem: (variantId: string) => void;
   removeItem: (variantId: string) => void;
-  togglePriceType: (variantId: string) => void;
-  toggleBoxMode: (variantId: string) => void;
+  setLinePriceType: (variantId: string, priceType: PriceType) => void;
+  setLineSellingUnit: (variantId: string, sellingUnit: SellingUnit) => void;
   clearCart: () => CartItem[];
   cartTotal: number;
   cartCount: number;
@@ -70,8 +70,9 @@ export function KioskProvider({ children }: { children: ReactNode }) {
             wholesalePrice: variant.wholesale_price ?? null,
             boxQuantity: variant.box_quantity ?? null,
             boxPrice: variant.box_price ?? null,
+            // Default: Piece + Retail, per spec
             priceType: "retail",
-            isBox: false,
+            sellingUnit: "piece",
             quantity: 1,
           },
         ];
@@ -115,28 +116,42 @@ export function KioskProvider({ children }: { children: ReactNode }) {
     [checkoutStage],
   );
 
-  const togglePriceType = useCallback(
-    (variantId: string) => {
+  // Only meaningful while sellingUnit === "piece" — Box is wholesale-only,
+  // so the price type selector is disabled in the UI whenever a line is in
+  // Box mode. This guard is a second line of defense against that same rule.
+  const setLinePriceType = useCallback(
+    (variantId: string, priceType: PriceType) => {
       if (checkoutStage !== "cart") return;
       setCart((prev) =>
         prev.map((item) => {
           if (item.variantId !== variantId) return item;
-          if (item.wholesalePrice == null) return item;
-          return { ...item, priceType: item.priceType === "retail" ? "wholesale" : "retail" };
+          if (item.sellingUnit === "box") return item;
+          if (priceType === "wholesale" && item.wholesalePrice == null) return item;
+          return { ...item, priceType };
         }),
       );
     },
     [checkoutStage],
   );
 
-  const toggleBoxMode = useCallback(
-    (variantId: string) => {
+  // Switching to Box always forces the price type to wholesale, since
+  // Retail + Box is not a valid combination. Switching back to Piece leaves
+  // whatever price type was last selected untouched and unlocks the toggle.
+  const setLineSellingUnit = useCallback(
+    (variantId: string, sellingUnit: SellingUnit) => {
       if (checkoutStage !== "cart") return;
       setCart((prev) =>
         prev.map((item) => {
           if (item.variantId !== variantId) return item;
-          if (item.boxPrice == null) return item;
-          return { ...item, isBox: !item.isBox };
+          if (sellingUnit === "box") {
+            if (item.boxPrice == null) return item;
+            // Note: priceType is intentionally left untouched here. Box always
+            // uses the box price regardless of priceType, and leaving the
+            // stored value alone means switching back to Piece restores
+            // whichever Retail/Wholesale choice was active before Box mode.
+            return { ...item, sellingUnit: "box" };
+          }
+          return { ...item, sellingUnit: "piece" };
         }),
       );
     },
@@ -169,8 +184,8 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       incrementItem,
       decrementItem,
       removeItem,
-      togglePriceType,
-      toggleBoxMode,
+      setLinePriceType,
+      setLineSellingUnit,
       clearCart,
       cartTotal,
       cartCount,
@@ -185,8 +200,8 @@ export function KioskProvider({ children }: { children: ReactNode }) {
       incrementItem,
       decrementItem,
       removeItem,
-      togglePriceType,
-      toggleBoxMode,
+      setLinePriceType,
+      setLineSellingUnit,
       clearCart,
       cartTotal,
       cartCount,

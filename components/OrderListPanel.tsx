@@ -26,8 +26,8 @@ export function OrderListPanel() {
     incrementItem,
     decrementItem,
     removeItem,
-    togglePriceType,
-    toggleBoxMode,
+    setLinePriceType,
+    setLineSellingUnit,
     clearCart,
     checkoutStage: stage,
     setCheckoutStage: setStage,
@@ -108,7 +108,9 @@ export function OrderListPanel() {
         items: cart.map((item) => ({
           product_name: item.productName,
           variant_label: item.variantLabel,
-          retail_price: getItemUnitPrice(item),
+          unit_price: getItemUnitPrice(item),
+          price_type: item.priceType,
+          selling_unit: item.sellingUnit,
           quantity: item.quantity,
         })),
         itemCount: cartCount,
@@ -220,7 +222,7 @@ export function OrderListPanel() {
 
       {stage === "cart" && (
         <>
-          <ul className={`flex-1 min-h-0 divide-y divide-kiosk-muted overflow-y-auto px-6 py-4 ${SCROLL_HIDDEN}`}>
+          <ul className={`flex-1 min-h-0 divide-y divide-kiosk-muted overflow-y-auto px-6 pt-4 ${SCROLL_HIDDEN}`}>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-100 text-center">
                 <img src="/pochaco-removebg-preview.png" alt="" className="h-20 w-20" />
@@ -250,63 +252,97 @@ export function OrderListPanel() {
                     </button>
                   </div>
 
-                  <div className="mb-3 flex items-center gap-2">
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => togglePriceType(item.variantId)}
-                      disabled={item.wholesalePrice == null || item.isBox}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed ${
-                        item.priceType === "wholesale"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-kiosk-light text-kiosk-primary"
+                      onClick={() => setLineSellingUnit(item.variantId, "piece")}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide smooth-transition ${
+                        item.sellingUnit === "piece"
+                          ? "bg-kiosk-primary text-white"
+                          : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
                       }`}
                     >
-                      {item.priceType === "wholesale" ? "Wholesale" : "Retail"}
+                      Piece
                     </button>
-                    {item.boxPrice != null && item.boxQuantity != null && (
-                      <span className="text-[11px] font-medium text-gray-400">
-                        1 box = {item.boxQuantity} pcs
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setLineSellingUnit(item.variantId, "box")}
+                      disabled={item.boxPrice == null}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide smooth-transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                        item.sellingUnit === "box"
+                          ? "bg-kiosk-primary text-white"
+                          : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
+                      }`}
+                    >
+                      Box
+                    </button>
+
+                    <span className="mx-0.5 h-3.5 w-px bg-kiosk-muted" />
+
+                    {(() => {
+                      const effectivePriceType = item.sellingUnit === "box" ? "wholesale" : item.priceType;
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setLinePriceType(item.variantId, "retail")}
+                            disabled={item.sellingUnit === "box"}
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide smooth-transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                              effectivePriceType === "retail"
+                                ? "bg-kiosk-light text-kiosk-primary"
+                                : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
+                            }`}
+                          >
+                            Retail
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLinePriceType(item.variantId, "wholesale")}
+                            disabled={item.sellingUnit === "box" || item.wholesalePrice == null}
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide smooth-transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                              effectivePriceType === "wholesale"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
+                            }`}
+                          >
+                            Wholesale
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <p className="text-base font-bold text-foreground">
-                      {formatCurrency(getItemUnitPrice(item) * item.quantity)}
+                  {item.sellingUnit === "box" && item.boxQuantity != null && (
+                    <p className="mb-2 text-[11px] font-medium text-gray-400">
+                      1 box = {item.boxQuantity} pcs
                     </p>
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
-                        <button
-                          type="button"
-                          onClick={() => decrementItem(item.variantId)}
-                          aria-label={`Decrease quantity of ${item.productName}`}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
-                        >
-                          −
-                        </button>
-                        <span className="w-5 text-center font-bold text-gray-900 text-xs">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => incrementItem(item.variantId)}
-                          aria-label={`Increase quantity of ${item.productName}`}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
-                        >
-                          +
-                        </button>                        
-                      </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-bold text-foreground mt-4">
+                        {formatCurrency(getItemUnitPrice(item) * item.quantity)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-kiosk-lighter rounded-[12px] p-1">
                       <button
                         type="button"
-                        onClick={() => toggleBoxMode(item.variantId)}
-                        disabled={item.boxPrice == null}
-                        aria-label={item.isBox ? "Switch to piece pricing" : "Switch to box pricing"}
-                        aria-pressed={item.isBox}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg text-xl smooth-transition tap-scale disabled:opacity-30 disabled:cursor-not-allowed ${
-                          item.isBox ? "bg-kiosk-primary text-white" : "bg-kiosk-lighter text-gray-500 hover:bg-kiosk-light"
-                        }`}
+                        onClick={() => decrementItem(item.variantId)}
+                        aria-label={`Decrease quantity of ${item.productName}`}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
                       >
-                        📦
+                        −
+                      </button>
+                      <span className="w-5 text-center font-bold text-gray-900 text-xs">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => incrementItem(item.variantId)}
+                        aria-label={`Increase quantity of ${item.productName}`}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-kiosk-primary hover:bg-kiosk-light active:scale-90 smooth-transition tap-scale"
+                      >
+                        +
                       </button>
                     </div>
                   </div>

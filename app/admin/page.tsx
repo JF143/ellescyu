@@ -795,16 +795,27 @@ export default function AdminPage() {
                         <div className="space-y-2 border-t border-dashed border-kiosk-muted pt-4 mb-4">
                           <p className="text-xs font-semibold text-kiosk-accent uppercase tracking-wide mb-2">Items</p>
                           {selectedInvoice.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700">
-                                {item.quantity}x {item.product_name}
-                                <span className="text-kiosk-accent"> ({item.variant_label})</span>
-                              </span>
-                              <span className="font-semibold text-foreground">
-                                {formatCurrency(item.retail_price * item.quantity)}
-                              </span>
-                            </div>
-                          ))}
+                          <div key={idx} className="flex items-center justify-between text-sm gap-2">
+                            <span className="text-gray-700">
+                              {item.quantity}
+                              {item.selling_unit === "box"
+                                ? item.quantity === 1
+                                  ? " Box "
+                                  : " Boxes "
+                                : "x "}
+                              {item.product_name}
+                              <span className="text-kiosk-accent"> ({item.variant_label})</span>
+                              {item.price_type === "wholesale" && (
+                                <span className="ml-1.5 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                                  Wholesale
+                                </span>
+                              )}
+                            </span>
+                            <span className="shrink-0 font-semibold text-foreground">
+                              {formatCurrency(item.unit_price * item.quantity)}
+                            </span>
+                          </div>
+                        ))}
                         </div>
 
                         <div className="border-t-2 border-dashed border-kiosk-muted pt-4 space-y-2">

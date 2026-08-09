@@ -33,6 +33,7 @@ export type Variant = {
 };
 
 export type PriceType = "retail" | "wholesale";
+export type SellingUnit = "piece" | "box";
 
 export type CartItem = {
   variantId: string;
@@ -43,7 +44,7 @@ export type CartItem = {
   boxQuantity: number | null;
   boxPrice: number | null;
   priceType: PriceType;
-  isBox: boolean;
+  sellingUnit: SellingUnit;
   quantity: number;
 };
 
@@ -56,7 +57,9 @@ export type KioskData = {
 export type InvoiceItem = {
   product_name: string;
   variant_label: string;
-  retail_price: number;
+  unit_price: number;
+  price_type: PriceType;
+  selling_unit: SellingUnit;
   quantity: number;
 };
 
