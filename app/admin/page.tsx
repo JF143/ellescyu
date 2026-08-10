@@ -780,6 +780,7 @@ export default function AdminPage() {
                         <label className="block mb-6">
                           <span className="mb-1 block text-xs font-semibold text-kiosk-accent uppercase tracking-wide">Customer</span>
                           <input
+                            key={selectedInvoice.id}
                             defaultValue={selectedInvoice.customer_name ?? ""}
                             placeholder="Walk-in customer"
                             onBlur={(e) => {
