@@ -72,4 +72,21 @@ export type Invoice = {
   cash_received: number;
   change_due: number;
   created_at?: string;
+  cashier_name?: string | null;
+};
+
+export type Cashier = {
+  id: string;
+  username: string;
+  password_hash: string;
+  display_name: string;
+  created_at?: string;
+};
+
+export type Shift = {
+  id: string;
+  cashier_id: string | null;
+  cashier_name: string;
+  login_at: string;
+  logout_at: string | null;
 };

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Invoice, InvoiceItem } from "@/types";
 
+
 type NewInvoiceInput = {
   customerName?: string | null;
+  cashierName?: string | null;
   items: InvoiceItem[];
   itemCount: number;
   subtotal: number;
@@ -42,6 +44,7 @@ export function useInvoices() {
   const addInvoice = useCallback(async (input: NewInvoiceInput) => {
     const { error } = await supabase.from("invoices").insert({
       customer_name: input.customerName?.trim() || null,
+      cashier_name: input.cashierName ?? null,
       items: input.items,
       item_count: input.itemCount,
       subtotal: input.subtotal,

@@ -15,6 +15,9 @@ import Link from "next/link";
 import type { Section } from "@/types";
 import { useToast } from "@/components/Toast";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { useCashierSession } from "@/hooks/useCashierSession";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function HomePage() {
   const mounted = useMounted();
@@ -29,6 +32,9 @@ export default function HomePage() {
   const mainRef = useRef<HTMLDivElement>(null);
   const { addToCart } = useCart();
   const { showToast } = useToast();
+  const router = useRouter();
+  const { session, hydrated, setSession } = useCashierSession();
+
 
   const {
     sections,
@@ -85,6 +91,18 @@ export default function HomePage() {
     setMobileCategoriesOpen(false);
   };
 
+    const handleLogout = async () => {
+    if (session) {
+      try {
+        await supabase.from("shifts").update({ logout_at: new Date().toISOString() }).eq("id", session.shiftId);
+      } catch (err) {
+        console.error("Failed to record logout:", err);
+      }
+    }
+    setSession(null);
+    router.replace("/login");
+  };
+
   // Swipe gesture handlers for mobile drawer
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -115,6 +133,12 @@ useEffect(() => {
   }, 3000);
   return () => clearTimeout(timer);
 }, []);
+
+useEffect(() => {
+    if (hydrated && !session) {
+      router.replace("/login");
+    }
+  }, [hydrated, session, router]);
 
   const renderCategoryButtons = () => (
     <>
@@ -153,8 +177,12 @@ useEffect(() => {
   );
 
   if (!mounted || (!hasShownIntro && (isLoading || !minLoadTimeElapsed))) {
-  return <LoadingScreen />;
-}
+    return <LoadingScreen />;
+  }
+
+  if (!hydrated || !session) {
+    return <LoadingScreen />;
+  }
 
   if (error) {
     return (
@@ -183,7 +211,7 @@ useEffect(() => {
         <p className="text-sm font-bold text-kiosk-primary truncate px-2">
           {selectedSection ? `${selectedSection.icon ?? "📦"} ${selectedSection.name}` : "Ellescyu's Kiosk"}
         </p>
-        <button
+                <button
           type="button"
           onClick={() => setMobileSearchOpen((prev) => !prev)}
           aria-label="Toggle search"
@@ -195,6 +223,14 @@ useEffect(() => {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Log out"
+          className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-kiosk-primary hover:bg-kiosk-muted transition"
+        >
+          {session?.displayName}
         </button>
       </div>
 
@@ -313,16 +349,28 @@ useEffect(() => {
                   : "Browse through the products and build the customer's order"}
               </p>
             </div>
-            {now && (
-              <div className="text-right shrink-0">
-                <p className="text-3xl font-bold text-foreground tabular-nums">
-                  {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
-                </p>
+                        <div className="flex items-start gap-6 shrink-0">
+              {now && (
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-foreground tabular-nums">
+                    {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
+                  </p>
+                </div>
+              )}
+              <div className="text-right">
+                <p className="text-sm font-bold text-kiosk-primary">{session?.displayName}</p>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-xs font-semibold text-gray-500 hover:text-kiosk-primary transition"
+                >
+                  Log out
+                </button>
               </div>
-            )}
+            </div>
           </header>
 
           <div className={`relative mb-6 ${mobileSearchOpen ? "block" : "hidden"} lg:block`}>

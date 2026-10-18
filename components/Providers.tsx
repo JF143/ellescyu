@@ -2,11 +2,14 @@
 
 import { KioskProvider } from "@/hooks/KioskProvider";
 import { ToastProvider } from "@/components/Toast";
+import { CashierSessionProvider } from "@/hooks/useCashierSession";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <KioskProvider>
-      <ToastProvider>{children}</ToastProvider>
-    </KioskProvider>
+    <CashierSessionProvider>
+      <ToastProvider>
+        <KioskProvider>{children}</KioskProvider>
+      </ToastProvider>
+    </CashierSessionProvider>
   );
 }

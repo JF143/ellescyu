@@ -9,6 +9,8 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useToast } from "@/components/Toast";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { getItemUnitPrice } from "@/lib/pricing";
+import { useCashierSession } from "@/hooks/useCashierSession";
+
 
 const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
 
@@ -19,6 +21,7 @@ export function OrderListPanel() {
   const mounted = useMounted();
   const pathname = usePathname();
   const router = useRouter();
+  const { session } = useCashierSession();
   const {
     cart,
     cartTotal,
@@ -72,7 +75,7 @@ export function OrderListPanel() {
     return new Date();
   }, [stage]);
 
-  if (!mounted || pathname.startsWith("/admin") || !appReady) {
+    if (!mounted || pathname !== "/" || !appReady) {
     return null;
   }
 
@@ -105,6 +108,7 @@ export function OrderListPanel() {
     try {
       await addInvoice({
         customerName,
+        cashierName: session?.displayName ?? null,
         items: cart.map((item) => ({
           product_name: item.productName,
           variant_label: item.variantLabel,
@@ -488,7 +492,7 @@ export function OrderListPanel() {
                     ? receiptTimestamp.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
                     : ""}
                 </span>
-                <span className="font-medium">Cashier: —</span>
+                <span className="font-medium">Cashier: {session?.displayName ?? "—"}</span>
               </div>
 
               <div className="mb-5 border-t-2 border-dashed border-kiosk-muted" />

@@ -14,6 +14,14 @@ import { uploadProductImage } from "@/lib/uploadImage";
 import { formatCurrency } from "@/lib/formatCurrency";
 import type { Product, Section, Brand } from "@/types";
 import { useInvoices } from "@/hooks/useInvoices";
+import { useCashiers } from "@/hooks/useCashiers";
+import { useShifts } from "@/hooks/useShifts";
+
+const { cashiers, addCashier, deleteCashier } = useCashiers();
+const { shifts, isLoading: shiftsLoading } = useShifts();
+const [newCashierUsername, setNewCashierUsername] = useState("");
+const [newCashierPassword, setNewCashierPassword] = useState("");
+const [newCashierDisplayName, setNewCashierDisplayName] = useState("");
 
 type PendingDelete =
   | { type: "brand"; id: string; name: string }
@@ -63,7 +71,7 @@ export default function AdminPage() {
 
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [resumeDrawer, setResumeDrawer] = useState<(() => void) | null>(null);
-  const [activeTab, setActiveTab] = useState<"categories" | "brands" | "products" | "invoices">("categories");
+  const [activeTab, setActiveTab] = useState<"categories" | "brands" | "products" | "invoices" | "cashiers">("categories");
 
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("");
@@ -459,6 +467,7 @@ export default function AdminPage() {
             { key: "brands" as const, label: "Brands", icon: "🏷️" },
             { key: "products" as const, label: "Products", icon: "📦" },
             { key: "invoices" as const, label: "Invoices", icon: "🧾" },
+            { key: "cashiers" as const, label: "Cashiers", icon: "👤" }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -838,6 +847,121 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </section>
+          )}
+                  {activeTab === "cashiers" && (
+            <section>
+              <h2 className="mb-4 text-lg lg:text-xl font-bold text-foreground">Cashiers</h2>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newCashierUsername.trim() || !newCashierPassword.trim() || !newCashierDisplayName.trim()) return;
+                  try {
+                    await addCashier(newCashierUsername, newCashierPassword, newCashierDisplayName);
+                    setNewCashierUsername("");
+                    setNewCashierPassword("");
+                    setNewCashierDisplayName("");
+                    showToast("Cashier added");
+                  } catch (error) {
+                    console.error("Failed to add cashier:", error);
+                    showToast("Failed to add cashier — username may already exist");
+                  }
+                }}
+                className="mb-6 rounded-2xl bg-white p-4 shadow-sm border border-kiosk-muted space-y-3"
+              >
+                <p className="text-sm font-semibold text-kiosk-accent">Add New Cashier</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <input
+                    value={newCashierDisplayName}
+                    onChange={(e) => setNewCashierDisplayName(e.target.value)}
+                    placeholder="Display name"
+                    className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
+                  />
+                  <input
+                    value={newCashierUsername}
+                    onChange={(e) => setNewCashierUsername(e.target.value)}
+                    placeholder="Username"
+                    className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
+                  />
+                  <input
+                    type="password"
+                    value={newCashierPassword}
+                    onChange={(e) => setNewCashierPassword(e.target.value)}
+                    placeholder="Password"
+                    className="rounded-xl border-2 border-kiosk-muted px-4 py-2.5 outline-none focus:border-kiosk-primary bg-kiosk-canvas"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-full bg-kiosk-primary px-5 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90"
+                >
+                  + Add Cashier
+                </button>
+              </form>
+
+              {cashiers.length === 0 ? (
+                <p className="text-kiosk-accent mb-8">No cashiers yet.</p>
+              ) : (
+                <div className="mb-8 flex flex-wrap gap-2">
+                  {cashiers.map((cashier) => (
+                    <div
+                      key={cashier.id}
+                      className="flex items-center gap-2 rounded-full bg-white border-2 border-kiosk-muted px-4 py-2 text-sm font-bold text-kiosk-primary shadow-sm"
+                    >
+                      {cashier.display_name}
+                      <span className="text-xs font-normal text-kiosk-accent">@{cashier.username}</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm(`Remove cashier "${cashier.display_name}"?`)) return;
+                          try {
+                            await deleteCashier(cashier.id);
+                            showToast("Cashier removed");
+                          } catch (error) {
+                            console.error("Failed to delete cashier:", error);
+                            showToast("Failed to remove cashier");
+                          }
+                        }}
+                        className="ml-1 text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <h3 className="mb-3 text-base font-bold text-foreground">Shift Log</h3>
+              {shiftsLoading ? (
+                <p className="text-kiosk-accent">Loading shift log...</p>
+              ) : shifts.length === 0 ? (
+                <p className="text-kiosk-accent">No shifts recorded yet.</p>
+              ) : (
+                <div className="rounded-2xl bg-white shadow-sm border border-kiosk-muted overflow-hidden">
+                  <ul className="divide-y divide-kiosk-muted">
+                    {shifts.map((shift) => (
+                      <li key={shift.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
+                        <div>
+                          <p className="font-bold text-foreground">{shift.cashier_name}</p>
+                          <p className="text-xs text-kiosk-accent">
+                            Logged in {new Date(shift.login_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                        </div>
+                        {shift.logout_at ? (
+                          <span className="text-xs text-kiosk-accent">
+                            Logged out {new Date(shift.logout_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">
+                            On shift
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </section>
