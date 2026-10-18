@@ -17,11 +17,6 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useCashiers } from "@/hooks/useCashiers";
 import { useShifts } from "@/hooks/useShifts";
 
-const { cashiers, addCashier, deleteCashier } = useCashiers();
-const { shifts, isLoading: shiftsLoading } = useShifts();
-const [newCashierUsername, setNewCashierUsername] = useState("");
-const [newCashierPassword, setNewCashierPassword] = useState("");
-const [newCashierDisplayName, setNewCashierDisplayName] = useState("");
 
 type PendingDelete =
   | { type: "brand"; id: string; name: string }
@@ -51,6 +46,12 @@ export default function AdminPage() {
   const { brands, addBrand, updateBrand, deleteBrand } = useBrands();
   const { showToast } = useToast();
   const { invoices, isLoading: invoicesLoading, updateInvoiceCustomerName } = useInvoices();
+  const { cashiers, addCashier, deleteCashier } = useCashiers();
+  const { shifts, isLoading: shiftsLoading } = useShifts();
+
+  const [newCashierUsername, setNewCashierUsername] = useState("");
+  const [newCashierPassword, setNewCashierPassword] = useState("");
+  const [newCashierDisplayName, setNewCashierDisplayName] = useState("");
 
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState("");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
